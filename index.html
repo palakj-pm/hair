@@ -1,0 +1,3815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hair Reorder Intelligence; Man Matters</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #1a1a1a;            /* near-black; high contrast for body text */
+  --ink-mid: #4a4a48;
+  --ink-light: #7a7a76;
+  --ink-faint: #b8b8b3;
+  --bg: #fafaf7;             /* very light warm; almost white */
+  --white: #ffffff;
+  --border: #e8e6e1;
+  --navy: #232527;           /* charcoal; used only in sidebar, not blue */
+  --navy-light: #f2f0eb;
+  --sage: #4f7a64;           /* muted sage for "correct" highlights */
+  --sage-light: #e7efe9;
+  --amber: #9a661f;
+  --amber-light: #f9eed3;
+  --coral: #a8472f;
+  --coral-light: #f7e0d6;
+  --purple: #6b4a26;
+  --purple-light: #f0e6d2;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+  --shadow-md: 0 2px 8px rgba(0,0,0,.06);
+  --shadow-lg: 0 12px 36px rgba(0,0,0,.10);
+  --radius: 8px;
+  --sidebar-w: 240px;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+/* ── LAYOUT ── */
+.app { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--navy);
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  display: flex; flex-direction: column;
+  z-index: 20;
+  overflow-y: auto;
+}
+
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR ── */
+.sidebar-header {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 4px;
+}
+
+.brand-mark {
+  width: 32px; height: 32px;
+  background: rgba(255,255,255,.12);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 800; font-size: 12px;
+  color: #fff;
+  letter-spacing: .05em;
+}
+
+.brand-name {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700; font-size: 13px;
+  color: #fff;
+}
+
+.brand-sub {
+  font-size: 10px; color: rgba(255,255,255,.35);
+  margin-top: 2px; letter-spacing: .04em;
+}
+
+.sidebar-stats {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+
+.stat-pill {
+  background: rgba(255,255,255,.06);
+  border-radius: 7px; padding: 10px 12px;
+}
+
+.stat-pill-val {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px; font-weight: 700;
+  color: #fff; line-height: 1;
+}
+
+.stat-pill-label {
+  font-size: 9px; color: rgba(255,255,255,.35);
+  margin-top: 3px; letter-spacing: .06em; text-transform: uppercase;
+}
+
+.stat-pill.red .stat-pill-val { color: #fca5a5; }
+.stat-pill.amber .stat-pill-val { color: #fcd34d; }
+
+.sidebar-filters {
+  padding: 16px 20px;
+  flex: 1;
+}
+
+.filter-label {
+  font-size: 9px; font-weight: 600;
+  color: rgba(255,255,255,.3);
+  letter-spacing: .08em; text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.filter-btns {
+  display: flex; flex-direction: column; gap: 3px;
+  margin-bottom: 18px;
+}
+
+.filter-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; border-radius: 6px;
+  font-size: 12px; color: rgba(255,255,255,.5);
+  cursor: pointer; transition: all .12s;
+  border: none; background: none; width: 100%; text-align: left;
+}
+
+.filter-btn:hover { background: rgba(255,255,255,.08); color: rgba(255,255,255,.85); }
+.filter-btn.active {
+  background: rgba(255,255,255,.18);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--sage);
+}
+
+.filter-btn-count {
+  background: rgba(255,255,255,.12);
+  border-radius: 999px; padding: 2px 8px;
+  font-size: 11px; font-weight: 700;
+  margin-left: auto;
+  min-width: 20px; text-align: center;
+}
+.filter-btn.active .filter-btn-count { background: var(--sage); color: #fff; }
+.filter-btn.empty { opacity: .35; cursor: default; }
+.filter-btn.empty:hover { background: transparent; color: rgba(255,255,255,.55); }
+
+.sidebar-footer {
+  padding: 14px 20px;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+
+.last-updated {
+  font-size: 9px; color: rgba(255,255,255,.25);
+  letter-spacing: .04em;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 10;
+}
+
+.topbar-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px; font-weight: 700;
+  color: var(--navy);
+}
+
+.topbar-sub {
+  font-size: 11px; color: var(--ink-light); margin-top: 2px;
+}
+
+.topbar-right {
+  display: flex; align-items: center; gap: 10px;
+}
+
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 7px; padding: 7px 12px;
+  font-size: 12px; color: var(--ink-light);
+  cursor: text;
+}
+
+/* ── USER LIST ── */
+.user-list {
+  padding: 20px 28px;
+  flex: 1;
+}
+
+.list-header {
+  display: grid;
+  grid-template-columns: 140px 80px 80px 100px 160px 160px 120px 110px;
+  gap: 0;
+  padding: 8px 16px;
+  margin-bottom: 6px;
+}
+
+.list-header-cell {
+  font-size: 10px; font-weight: 600;
+  color: var(--ink-light);
+  letter-spacing: .06em; text-transform: uppercase;
+}
+
+.user-row {
+  display: grid;
+  grid-template-columns: 140px 80px 80px 100px 160px 160px 120px 110px;
+  gap: 0;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all .14s;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.user-row:hover {
+  border-color: #c5c8d4;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* New tile-style user row; TL;DR-led so reviewer can scan without opening */
+.user-row-tile {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 0 24px 10px;
+  cursor: pointer;
+  transition: border-color .12s, box-shadow .12s;
+}
+.user-row-tile:hover { border-color: var(--ink-faint); box-shadow: var(--shadow-sm); }
+.user-row-tile.selected { border-color: var(--ink); box-shadow: var(--shadow-md); }
+.row-head {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px; color: var(--ink-light);
+  margin-bottom: 8px;
+}
+.row-id {
+  font-family: 'DM Sans', sans-serif; font-weight: 700;
+  color: var(--ink); font-size: 13px;
+}
+.row-stage {
+  background: var(--bg); padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 700; color: var(--ink-mid);
+}
+.row-overdue { font-size: 12px; color: var(--ink-mid); }
+.row-overdue strong { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--coral); }
+.row-risk {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 999px;
+}
+.row-risk.risk-high   { background: var(--coral-light); color: var(--coral); }
+.row-risk.risk-medium { background: var(--amber-light); color: var(--amber); }
+.row-risk.risk-low    { background: var(--sage-light);  color: var(--sage); }
+.row-fb { margin-left: auto; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+.row-fb.sage  { background: var(--sage-light);  color: var(--sage); }
+.row-fb.coral { background: var(--coral-light); color: var(--coral); }
+.row-tldr {
+  font-size: 13.5px; line-height: 1.5; color: var(--ink);
+  margin-bottom: 10px;
+}
+.row-foot {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--ink-light);
+}
+.row-status { font-weight: 500; }
+
+.user-row.selected {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 2px rgba(27,45,79,.1), var(--shadow-md);
+}
+
+.cell { font-size: 12px; color: var(--ink); padding-right: 12px; }
+.cell-id { font-weight: 600; color: var(--navy); font-family: 'DM Sans', sans-serif; font-size: 11px; }
+.cell-light { color: var(--ink-light); font-size: 11px; }
+
+.risk-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 600;
+  padding: 3px 8px; border-radius: 999px;
+  letter-spacing: .03em;
+}
+
+.risk-high { background: var(--coral-light); color: var(--coral); }
+.risk-medium { background: var(--amber-light); color: var(--amber); }
+.risk-low { background: var(--sage-light); color: var(--sage); }
+.risk-converted { background: #dcfce7; color: #166534; }
+
+.quality-dots {
+  display: flex; gap: 3px; align-items: center;
+}
+
+.qdot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.qdot-good { background: #22c55e; }
+.qdot-mid  { background: #f59e0b; }
+.qdot-bad  { background: #ef4444; }
+.qdot-null { background: #e5e7eb; }
+
+.action-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 600;
+  padding: 3px 9px; border-radius: 999px;
+}
+
+.action-call { background: var(--coral-light); color: var(--coral); }
+.action-whatsapp { background: var(--sage-light); color: var(--sage); }
+.action-none { background: var(--bg); color: var(--ink-light); }
+.action-clinical { background: var(--purple-light); color: var(--purple); }
+
+.cohort-badge {
+  display: inline-block; margin-left: 6px;
+  font-size: 9.5px; font-weight: 700;
+  padding: 1px 6px; border-radius: 3px;
+  letter-spacing: .3px;
+}
+.cohort-m1     { background: #fef3c7; color: #92400e; }
+.cohort-m1_reorder { background: #dcfce7; color: #166534; }
+.cohort-m2     { background: #dbeafe; color: #1e40af; }
+.cohort-repeat { background: var(--sage-light); color: var(--sage); }
+.cohort-veteran{ background: var(--purple-light); color: var(--purple); }
+
+/* Main-view tabs */
+.main-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--line);
+  background: white;
+  padding: 0 24px;
+}
+.main-tab {
+  padding: 14px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-light);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.main-tab:hover { color: var(--ink-mid); }
+.main-tab.active {
+  color: var(--navy);
+  border-bottom-color: var(--sage);
+}
+
+/* Quality dashboard — filters + pie charts */
+.qd-filterbar {
+  display: flex;
+  gap: 16px;
+  padding: 14px 24px;
+  background: white;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.qd-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.qd-filter-group label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.qd-filter-group select {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  font-size: 12px;
+  color: var(--ink-mid);
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 130px;
+}
+.qd-filter-group select:focus { outline: none; border-color: var(--sage); }
+.qd-filter-meta {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--ink-light);
+}
+.qd-filter-meta strong { color: var(--navy); font-family: 'DM Sans', sans-serif; }
+.qd-clear-btn {
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--ink-light);
+}
+.qd-clear-btn:hover { color: var(--coral); border-color: var(--coral); }
+
+.qd-section {
+  padding: 22px;
+  background: white;
+  margin: 16px 24px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+.qd-section-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+.qd-section-sub {
+  font-size: 12px;
+  color: var(--ink-light);
+  margin-bottom: 16px;
+}
+.qd-charts {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+.qd-chart {
+  padding: 14px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fafbfc;
+  text-align: center;
+}
+.qd-chart-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 2px;
+}
+.qd-chart-sub {
+  font-size: 10.5px;
+  color: var(--ink-light);
+  height: 28px;
+  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.qd-pie {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  margin: 0 auto 10px;
+  position: relative;
+  background: var(--line);
+}
+.qd-pie-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.qd-pie-total {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1;
+}
+.qd-pie-total-label {
+  font-size: 9px;
+  color: var(--ink-light);
+  margin-top: 1px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.qd-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  margin-top: 6px;
+}
+.qd-legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+.qd-legend-row:hover { background: rgba(0,0,0,0.03); }
+.qd-legend-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.qd-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.qd-legend-label { color: var(--ink-mid); font-weight: 500; }
+.qd-legend-count {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  color: var(--navy);
+}
+.qd-legend-count .pct { color: var(--ink-light); font-weight: 500; margin-left: 4px; font-size: 10px; }
+.qd-chart-avg {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--ink-light);
+}
+.qd-chart-avg strong {
+  color: var(--ink-mid);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+}
+.color-low  { background: #dc2626; }
+.color-med  { background: #d97706; }
+.color-high { background: #166534; }
+
+/* Protocol compliance dashboard */
+.pc-section {
+  margin: 16px 24px;
+  padding: 24px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+.pc-section-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+.pc-section-sub {
+  font-size: 12px;
+  color: var(--ink-light);
+  margin-bottom: 18px;
+}
+.pc-baseline-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  padding: 12px 18px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #92400e;
+}
+.pc-baseline-bar.has-baseline {
+  background: #dcfce7;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+.pc-baseline-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+.pc-baseline-btn {
+  background: white;
+  border: 1px solid currentColor;
+  padding: 6px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: inherit;
+}
+.pc-hero-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.pc-hero-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+  background: white;
+}
+.pc-hero-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+.pc-hero-bignum {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1;
+}
+.pc-hero-bignum .delta {
+  font-size: 14px;
+  margin-left: 8px;
+  font-weight: 600;
+}
+.delta.up { color: #166534; }
+.delta.down { color: #dc2626; }
+.delta.flat { color: var(--ink-light); }
+.pc-hero-baseline {
+  font-size: 11px;
+  color: var(--ink-light);
+  margin-top: 6px;
+}
+.pc-hero-cohort-split {
+  display: flex;
+  gap: 14px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 11.5px;
+}
+.pc-hero-cohort-split .label {
+  color: var(--ink-light);
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.pc-hero-cohort-split .num {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-mid);
+  margin-top: 2px;
+}
+.pc-hero-cohort-split .gap {
+  margin-left: auto;
+  text-align: right;
+}
+.pc-hero-cohort-split .gap-num {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #166534;
+  margin-top: 2px;
+}
+
+.pc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.pc-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--line);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pc-table th.right { text-align: right; }
+.pc-table th:hover { color: var(--sage); }
+.pc-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-mid);
+}
+.pc-table td.right { text-align: right; font-family: 'DM Sans', sans-serif; }
+.pc-table tr:hover td { background: rgba(0,0,0,0.02); }
+.pc-pct-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.pc-pct-bar {
+  width: 60px;
+  height: 6px;
+  background: var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.pc-pct-bar-fill {
+  height: 100%;
+  background: var(--sage);
+  border-radius: 3px;
+}
+.pc-pct-bar-fill.low { background: #dc2626; }
+.pc-pct-bar-fill.med { background: #d97706; }
+.pc-pct-bar-fill.high { background: #166534; }
+.pc-table .doctor-name { font-weight: 600; color: var(--ink); }
+.pc-table .small-note { color: var(--ink-light); font-size: 10.5px; margin-top: 2px; }
+
+.deep-read-badge {
+  display: inline-block; margin-left: 4px;
+  font-size: 9.5px; font-weight: 600;
+  padding: 1px 5px; border-radius: 3px;
+  background: #ecfccb; color: #3f6212;
+  letter-spacing: .2px;
+}
+
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  display: inline-block; margin-right: 5px;
+}
+.status-pending { background: #f59e0b; }
+.status-contacted { background: #3b82f6; }
+.status-converted { background: #22c55e; }
+
+/* ── USER CARD (detail panel) ── */
+.card-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: var(--sidebar-w); right: 0; bottom: 0;
+  background: rgba(15,17,23,.4);
+  z-index: 30;
+  backdrop-filter: blur(3px);
+}
+
+.card-overlay.open { display: block; }
+
+.user-card {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 560px;
+  max-width: 100%;
+  background: var(--white);
+  z-index: 40;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  transform: translateX(100%);
+  transition: transform .25s cubic-bezier(.4,0,.2,1);
+}
+
+.user-card.open {
+  transform: translateX(0);
+}
+
+.card-topbar {
+  position: sticky; top: 0;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  z-index: 5;
+}
+
+.card-close {
+  width: 30px; height: 30px;
+  border-radius: 50%; background: var(--bg);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 14px; color: var(--ink-light);
+  transition: all .12s;
+}
+
+.card-close:hover { background: var(--border); color: var(--ink); }
+
+.card-body { padding: 0 24px 32px; }
+
+/* Card header */
+.card-hero {
+  padding: 20px 0 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.card-hero-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.card-name {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px; font-weight: 700;
+  color: var(--navy);
+}
+
+.card-meta {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-top: 6px;
+}
+
+.meta-chip {
+  font-size: 11px; color: var(--ink-light);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 9px;
+}
+
+.overdue-flag {
+  background: var(--coral-light);
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.overdue-days {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 28px; font-weight: 800;
+  color: var(--coral); line-height: 1;
+}
+
+.overdue-label {
+  font-size: 11px; color: var(--coral);
+  line-height: 1.4;
+}
+
+/* Card sections; typography hierarchy
+   ┌── card-section-title  uppercase 10px tiny  (legacy mini-section head) ─┐
+   ├── section-heading     14px bold sentence-case   (real section heading)  │
+   ├── field-label         uppercase 10.5px          (small field label)     │
+   └── field-value         13.5px regular            (the actual content)    ┘
+*/
+.card-section { margin-bottom: 18px; }
+
+.card-section-title {
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-light);
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.card-section-body { padding: 0; }
+
+.section-heading {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px; font-weight: 700;
+  color: var(--ink); margin: 4px 0 12px;
+  letter-spacing: -.01em;
+}
+.subsection-heading {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-mid);
+  margin: 18px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Action chip + summary */
+.action-block { margin-bottom: 18px; }
+.action-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 999px;
+  font-size: 14px; font-weight: 600;
+  border: 1px solid;
+}
+.action-chip.tone-sage  { background: var(--sage-light);  color: var(--sage);  border-color: #b8d8c2; }
+.action-chip.tone-amber { background: var(--amber-light); color: var(--amber); border-color: #ecd89b; }
+.action-chip.tone-mute  { background: var(--bg);          color: var(--ink-mid); border-color: var(--border); }
+.action-icon { font-size: 14px; }
+.action-name { letter-spacing: -.005em; }
+.action-summary {
+  margin-top: 10px; font-size: 13.5px; line-height: 1.55;
+  color: var(--ink-mid);
+}
+
+/* Suggested first message; the copyable script */
+.message-block {
+  position: relative;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+.message-label {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--ink-light);
+  margin-bottom: 8px;
+}
+.message-body {
+  font-size: 13.5px; line-height: 1.55; color: var(--ink);
+  padding-right: 60px;  /* room for copy button */
+}
+.copy-btn {
+  position: absolute; top: 12px; right: 12px;
+  font-family: inherit; font-size: 11px; font-weight: 600;
+  padding: 4px 10px; border-radius: 4px; cursor: pointer;
+  background: var(--ink); color: white; border: none;
+}
+.copy-btn:hover { opacity: .85; }
+
+/* Primary verdict; one ✓/✗ for the whole card */
+.primary-verdict {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 12px 14px; margin: 12px 0 18px;
+  background: #fbf8f1;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+.primary-verdict.verdict-correct { background: var(--sage-light); border-color: #b8d8c2; }
+.primary-verdict.verdict-wrong   { background: var(--coral-light); border-color: #f5c8b6; }
+.pv-prompt { font-weight: 600; color: var(--ink-mid); }
+.sv-reviewer { font-size: 10px; color: var(--ink-light); }
+
+/* Accordion sections; collapsed by default */
+.accordion { border-top: 1px solid var(--border); margin-top: 8px; }
+.acc-section { border-bottom: 1px solid var(--border); }
+.acc-section summary {
+  list-style: none;
+  padding: 12px 0;
+  cursor: pointer;
+  font-size: 13.5px; font-weight: 600; color: var(--ink-mid);
+  display: flex; align-items: center; gap: 8px;
+}
+.acc-section summary::-webkit-details-marker { display: none; }
+.acc-section summary:hover { color: var(--ink); }
+.acc-section[open] summary { color: var(--ink); }
+.acc-section[open] summary .acc-icon { transform: rotate(90deg); }
+.acc-icon {
+  display: inline-block; width: 12px;
+  font-size: 10px; color: var(--ink-faint);
+  transition: transform .15s ease;
+}
+.acc-body {
+  padding: 4px 0 16px;
+}
+
+/* Quality group within accordion */
+.qual-group { margin-bottom: 16px; }
+.qual-group:last-child { margin-bottom: 0; }
+.qual-group-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; color: var(--ink-light);
+  margin-bottom: 8px;
+}
+
+/* Raw data grid */
+.raw-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+  margin-top: 10px;
+  font-size: 12.5px; line-height: 1.5; color: var(--ink-mid);
+}
+.raw-grid > div:first-child { grid-column: 1 / -1; }
+.micro-label {
+  display: block;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; color: var(--ink-light);
+  margin-bottom: 2px;
+}
+
+/* Supporting tactics block — appears between action chip and outreach plan */
+.tactics-block { margin: 18px 0; }
+.tactics-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.tactic-item {
+  padding: 10px 12px;
+  background: var(--bg);
+  border-left: 3px solid var(--amber);
+  border-radius: 4px;
+}
+.tactic-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.tactic-icon { font-size: 14px; line-height: 1; }
+.tactic-label { font-size: 12px; font-weight: 700; color: var(--ink-mid); text-transform: uppercase; letter-spacing: .3px; }
+.tactic-note { font-size: 13px; color: var(--ink); line-height: 1.5; }
+
+/* Outreach plan structure */
+.outreach-plan { margin-top: 4px; }
+.plan-block { margin-bottom: 14px; }
+.plan-label {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--ink-light);
+  margin-bottom: 6px;
+}
+.plan-label.do-label    { color: var(--sage); }
+.plan-label.avoid-label { color: var(--coral); }
+.plan-body {
+  font-size: 13.5px; line-height: 1.6; color: var(--ink);
+}
+.plan-list {
+  margin: 0; padding-left: 22px;
+  font-size: 13.5px; line-height: 1.6;
+}
+.plan-list li { margin-bottom: 6px; color: var(--ink); }
+.plan-list.avoid li::marker { color: var(--coral); }
+
+/* Signal rows */
+.signal-row {
+  margin-bottom: 12px;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 12px 14px;
+  border-left: 3px solid transparent;
+}
+
+.signal-row.negative { border-left-color: var(--coral); }
+.signal-row.neutral  { border-left-color: #d1d5db; }
+.signal-row.positive { border-left-color: var(--sage); }
+
+.signal-label {
+  font-size: 10px; font-weight: 600;
+  color: var(--ink-light);
+  letter-spacing: .05em; text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.signal-value {
+  font-size: 13px; font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.signal-quote {
+  font-size: 12px;
+  color: var(--ink-mid);
+  font-style: italic;
+  padding: 8px 12px;
+  background: var(--white);
+  border-radius: 6px;
+  border-left: 2px solid #d1d5db;
+  line-height: 1.6;
+}
+
+.signal-quote::before { content: '"'; }
+.signal-quote::after  { content: '"'; }
+
+/* Quality scores */
+.quality-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.quality-item {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 11px 13px;
+}
+
+.quality-item-label {
+  font-size: 10px; color: var(--ink-light);
+  letter-spacing: .04em; margin-bottom: 6px;
+}
+
+.quality-score-bar {
+  display: flex; gap: 3px; align-items: center;
+  margin-bottom: 5px;
+}
+
+.score-pip {
+  height: 5px; border-radius: 999px;
+  flex: 1;
+}
+
+.score-1 .score-pip:nth-child(1) { background: var(--coral); }
+.score-1 .score-pip:nth-child(2),
+.score-1 .score-pip:nth-child(3) { background: #e5e7eb; }
+
+.score-2 .score-pip:nth-child(1),
+.score-2 .score-pip:nth-child(2) { background: var(--amber); }
+.score-2 .score-pip:nth-child(3) { background: #e5e7eb; }
+
+.score-3 .score-pip:nth-child(1),
+.score-3 .score-pip:nth-child(2),
+.score-3 .score-pip:nth-child(3) { background: var(--sage); }
+
+.score-null .score-pip { background: #e5e7eb; }
+
+.quality-note {
+  font-size: 10px; color: var(--ink-light);
+  font-style: italic; line-height: 1.5;
+}
+
+/* Flags */
+.flags-list {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+
+.flag-tag {
+  font-size: 10px; font-weight: 600;
+  background: var(--amber-light);
+  color: var(--amber);
+  border-radius: 999px; padding: 3px 10px;
+  border: 1px solid #fde68a;
+}
+
+/* Outreach box */
+.outreach-box {
+  background: var(--navy);
+  border-radius: 10px;
+  padding: 18px 18px;
+}
+
+.outreach-action {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.outreach-context {
+  font-size: 12px; color: rgba(255,255,255,.65);
+  line-height: 1.7;
+}
+
+/* Status controls */
+.status-controls {
+  display: flex; gap: 8px; margin-top: 16px;
+}
+
+.status-btn {
+  flex: 1; padding: 9px;
+  border-radius: 7px;
+  font-size: 11px; font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--ink-mid);
+  cursor: pointer; transition: all .12s;
+  font-family: inherit;
+}
+
+.status-btn:hover { background: var(--bg); }
+.status-btn.active-contacted { background: #dbeafe; border-color: #93c5fd; color: #1d4ed8; }
+.status-btn.active-converted { background: var(--sage-light); border-color: #6ee7b7; color: var(--sage); }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--ink-light);
+}
+
+.empty-icon {
+  font-size: 32px; margin-bottom: 12px;
+}
+
+.empty-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 700;
+  color: var(--ink-mid);
+  margin-bottom: 6px;
+}
+
+.empty-sub {
+  font-size: 12px; line-height: 1.6;
+}
+
+/* ── FIELD DISPLAY; tag-chip style for scannability ── */
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+.field-grid > .field-block.full-width { grid-column: 1 / -1; }
+.field-block {
+  padding: 8px 10px 10px 12px;
+  border-left: 3px solid var(--border);
+  background: var(--white);
+  border-radius: 4px;
+}
+.field-block.conf-medium { border-left-color: var(--amber); }
+.field-block.conf-low    { border-left-color: var(--coral); }
+.field-label {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .6px; color: var(--ink-light);
+  margin-bottom: 6px;
+}
+.field-text { color: var(--ink); font-weight: 500; font-size: 13.5px; line-height: 1.5; }
+
+/* Scoring guide modal */
+.guide-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.4); z-index: 50;
+}
+.guide-overlay.open { display: block; }
+.guide-modal {
+  display: none; position: fixed;
+  top: 5vh; left: 50%; transform: translateX(-50%);
+  width: 720px; max-width: 92vw; max-height: 90vh;
+  background: var(--white); border-radius: 10px;
+  box-shadow: var(--shadow-lg); z-index: 51;
+  overflow: hidden;
+}
+.guide-modal.open { display: flex; flex-direction: column; }
+.guide-head {
+  padding: 18px 24px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: flex-start;
+}
+.guide-title { font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.guide-sub { font-size: 12.5px; color: var(--ink-light); }
+.guide-body { padding: 18px 24px 24px; overflow-y: auto; }
+.guide-section { margin-bottom: 22px; }
+.guide-section-head {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--ink-mid); margin-bottom: 12px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.guide-row {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+.guide-row-q {
+  font-size: 14px; font-weight: 700; color: var(--ink);
+  margin-bottom: 8px;
+}
+.guide-row-defs { display: flex; flex-direction: column; gap: 6px; }
+.def {
+  font-size: 12.5px; line-height: 1.5; color: var(--ink-mid);
+  padding: 6px 10px;
+  background: var(--white);
+  border-left: 3px solid var(--border);
+  border-radius: 4px;
+}
+.def-yes   { border-left-color: var(--sage); }
+.def-mixed { border-left-color: var(--amber); }
+.def-no    { border-left-color: var(--coral); }
+.def-label {
+  display: inline-block;
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+  padding: 2px 7px; border-radius: 3px; margin-right: 6px;
+}
+.def-yes .def-label   { background: var(--sage-light);  color: var(--sage); }
+.def-mixed .def-label { background: var(--amber-light); color: var(--amber); }
+
+/* Insights modal - extra width for richer content */
+.insights-modal { width: 920px; }
+.insights-headline {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px; margin-bottom: 22px;
+}
+.insights-stat {
+  background: var(--bg); border-radius: 6px; padding: 12px 14px;
+  border-left: 3px solid var(--sage);
+}
+.insights-stat-num {
+  font-family: 'DM Sans', sans-serif; font-weight: 700;
+  font-size: 22px; color: var(--ink); line-height: 1;
+}
+.insights-stat-label {
+  font-size: 11px; color: var(--ink-light); margin-top: 4px;
+  text-transform: uppercase; letter-spacing: .3px;
+}
+.insight-block {
+  margin-bottom: 22px; padding: 14px 16px;
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.insight-block-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.insight-block-title {
+  font-size: 14px; font-weight: 700; color: var(--ink);
+}
+.insight-block-pct {
+  font-family: 'DM Sans', sans-serif; font-weight: 700;
+  font-size: 13px; color: var(--sage);
+  background: var(--sage-light); padding: 3px 9px; border-radius: 3px;
+}
+.insight-row {
+  display: flex; gap: 10px; padding: 7px 0;
+  border-top: 1px solid var(--border); font-size: 12.5px;
+}
+.insight-row:first-of-type { border-top: 0; }
+.insight-cid {
+  font-family: 'DM Sans', sans-serif; font-weight: 700;
+  color: var(--navy); cursor: pointer; min-width: 70px;
+}
+.insight-cid:hover { text-decoration: underline; }
+.insight-detail { color: var(--ink-mid); flex: 1; }
+.insight-block-empty {
+  font-size: 12px; color: var(--ink-light); font-style: italic;
+}
+.insight-bar-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 0; font-size: 12.5px;
+}
+.insight-bar-label { min-width: 140px; color: var(--ink-mid); }
+.insight-bar-track {
+  flex: 1; height: 8px; background: var(--bg); border-radius: 3px; overflow: hidden;
+}
+.insight-bar-fill { height: 100%; background: var(--sage); }
+.insight-bar-num {
+  font-family: 'DM Sans', sans-serif; font-weight: 700;
+  min-width: 28px; text-align: right; color: var(--ink);
+}
+.insight-takeaway {
+  background: #fef3c7; border-left: 3px solid #f59e0b;
+  padding: 10px 14px; margin-bottom: 8px; border-radius: 4px;
+  font-size: 13px; line-height: 1.55; color: #78350f;
+}
+.insight-takeaway strong { color: #451a03; }
+.def-no .def-label    { background: var(--coral-light); color: var(--coral); }
+
+/* Summary tab */
+.sum-block { margin-bottom: 18px; }
+.sum-heading {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--ink-mid);
+  margin-bottom: 8px;
+  padding-bottom: 4px; border-bottom: 1px solid var(--border);
+}
+.sum-list { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.6; }
+.sum-list li { margin-bottom: 5px; color: var(--ink); }
+
+.quotes-wrap { display: flex; flex-direction: column; gap: 8px; }
+.quote-item {
+  background: var(--bg);
+  border-left: 3px solid var(--ink-faint);
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+.quote-item.quote-doctor  { border-left-color: var(--sage); }
+.quote-item.quote-patient { border-left-color: var(--amber); }
+.quote-icon { font-size: 14px; line-height: 1; }
+.quote-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.sec-icon, .plan-icon, .qg-icon, .ppc-icon { font-size: 13px; line-height: 1; margin-right: 2px; }
+.quote-speaker {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; color: var(--ink-mid);
+}
+.quote-lang {
+  font-size: 9px; font-weight: 700; padding: 1px 6px;
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 3px; color: var(--ink-light);
+}
+.quote-text {
+  font-size: 13px; color: var(--ink);
+  font-style: italic; line-height: 1.45;
+}
+.quote-trans {
+  font-size: 12px; color: var(--ink-mid);
+  margin-top: 3px; line-height: 1.45;
+}
+
+/* Product pushing check */
+.ppc-grid { display: flex; flex-direction: column; gap: 6px; }
+.ppc-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; }
+.ppc-label { font-size: 13px; color: var(--ink); }
+.ppc-label-small {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; color: var(--ink-light);
+  margin-right: 6px;
+}
+.ppc-products {
+  margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border);
+  font-size: 12.5px; color: var(--ink); line-height: 1.7;
+}
+.ppc-note {
+  margin-top: 10px; padding: 10px 12px;
+  background: #fbf8f1; border-radius: 4px; border-left: 3px solid var(--amber);
+  font-size: 12.5px; line-height: 1.55; color: var(--ink-mid);
+}
+
+/* Tag cloud; values render as chips, instantly scannable */
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag-chip {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 12.5px; line-height: 1.35;
+  color: var(--ink);
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Quality question/answer line; clear Y/Mixed/N readout */
+.qual-group-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--ink-light);
+  margin: 4px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.qline {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.qline:last-child { border-bottom: none; }
+.qline-q { font-size: 13.5px; color: var(--ink); }
+.qline-a {
+  font-size: 12.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: 4px; white-space: nowrap;
+}
+.ans-yes   { background: var(--sage-light);  color: var(--sage); }
+.ans-mixed { background: var(--amber-light); color: var(--amber); }
+.ans-no    { background: var(--coral-light); color: var(--coral); }
+.ans-null  { background: var(--bg); color: var(--ink-light); }
+
+/* Component chips for completeness/closure (5 sub-checks for completeness) */
+.comp-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; padding-left: 4px; }
+.comp-chip {
+  font-size: 11px; padding: 2px 8px; border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.comp-yes { background: var(--sage-light);  color: var(--sage);  border-color: #b8d8c2; }
+.comp-no  { background: var(--coral-light); color: var(--coral); border-color: #f5c8b6; }
+
+/* Reorder signal; single info strip, not a section */
+.signal-row {
+  display: flex; flex-wrap: wrap; gap: 0;
+  margin: 16px 0; padding: 12px 14px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: 12.5px;
+}
+.signal-pair {
+  display: inline-flex; flex-direction: column; gap: 2px;
+  padding: 0 14px; border-right: 1px solid var(--border);
+  flex: 1; min-width: 110px;
+}
+.signal-pair:last-child { border-right: none; }
+.signal-pair:first-child { padding-left: 0; }
+.signal-key {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; color: var(--ink-light);
+}
+.signal-val { font-size: 14px; font-weight: 600; color: var(--ink); }
+.signal-val.signal-warn { color: var(--coral); }
+
+.raw-data {
+  margin: 12px 0 16px;
+  font-size: 11.5px;
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 10px 14px;
+  background: var(--white);
+}
+.raw-data summary {
+  cursor: pointer; color: var(--ink-light);
+  font-size: 11.5px; font-weight: 600;
+  user-select: none;
+}
+.raw-data[open] summary { color: var(--ink-mid); margin-bottom: 4px; }
+.raw-data summary:hover { color: var(--ink); }
+
+/* Tab nav inside the slide-out card */
+.tab-nav {
+  display: flex; gap: 4px;
+  border-bottom: 1.5px solid var(--border);
+  margin: 16px 0 18px;
+}
+.tab-btn {
+  font-family: inherit; font-size: 13.5px; font-weight: 600;
+  background: none; border: none; cursor: pointer;
+  padding: 10px 4px; margin-right: 18px;
+  color: var(--ink-light);
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -1.5px;
+}
+.tab-btn:hover { color: var(--ink-mid); }
+.tab-btn.active { color: var(--ink); border-bottom-color: var(--ink); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* Quality dimension rows */
+.quality-row { padding: 8px 10px; margin-bottom: 6px; border-left: 2px solid var(--border); }
+.quality-row-head { display: flex; align-items: center; gap: 8px; }
+.quality-row-label { font-size: 11.5px; font-weight: 600; color: var(--ink-mid); }
+.quality-row-spacer { flex: 1; }
+.quality-row-score { font-size: 11px; color: var(--ink-light); font-weight: 500; min-width: 50px; text-align: right; }
+
+/* Sub-component rows (completeness / closure) */
+.components-list { margin-top: 4px; padding-left: 4px; }
+.component-row {
+  display: flex; align-items: baseline; gap: 6px;
+  font-size: 11.5px; padding: 2px 0;
+  color: var(--ink-mid);
+}
+.component-status { font-weight: 700; min-width: 14px; }
+.component-status.yes { color: var(--sage); }
+.component-status.no  { color: var(--coral); }
+.component-label { font-weight: 600; }
+.component-note { color: var(--ink-light); font-style: italic; }
+
+/* ── SECTION VERDICT BAR ── */
+.section-verdict {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-top: 10px; padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 11.5px;
+}
+.section-verdict.verdict-correct { background: var(--sage-light); border-color: #b8d8c2; }
+.section-verdict.verdict-wrong   { background: var(--coral-light); border-color: #f5c8b6; }
+.section-verdict.verdict-pending { background: #fbf8f1; }
+.section-verdict .sv-prompt { font-weight: 600; color: var(--ink-mid); }
+.section-verdict .sv-reviewer { font-size: 10px; color: var(--ink-light); }
+.verdict-btn {
+  font-family: inherit; font-size: 11px; font-weight: 600;
+  padding: 4px 10px; border-radius: 5px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--white); color: var(--ink-mid);
+}
+.verdict-btn:hover { background: var(--navy-light); }
+.verdict-btn.active.correct { background: var(--sage); color: white; border-color: var(--sage); }
+.verdict-btn.active.wrong   { background: var(--coral); color: white; border-color: var(--coral); }
+.verdict-spacer { flex: 1; }
+.correction-input { display: none; }
+.correction-input.show { display: block; }
+.correction-input textarea {
+  width: 100%; min-height: 50px; padding: 8px;
+  font-family: inherit; font-size: 12px;
+  border: 1px solid var(--border); border-radius: 5px;
+  resize: vertical; background: var(--white);
+}
+.correction-input textarea:focus { outline: 2px solid var(--ink-mid); outline-offset: -1px; }
+
+/* Reviewer + export bar */
+.reviewer-bar {
+  display: flex; gap: 12px; align-items: center;
+  padding: 12px 16px;
+  background: var(--white); border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.reviewer-bar input {
+  font-family: inherit; font-size: 12px;
+  padding: 6px 10px; border: 1px solid var(--border); border-radius: 5px;
+  width: 160px;
+}
+.reviewer-bar button {
+  font-family: inherit; font-size: 11px; font-weight: 600;
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: 5px;
+  background: var(--navy); color: white; cursor: pointer;
+}
+.reviewer-bar button.outline { background: white; color: var(--navy); }
+.reviewer-bar button:hover { opacity: 0.85; }
+.reviewer-bar .spacer { flex: 1; }
+
+.feedback-summary {
+  font-size: 11px; color: var(--ink-light);
+}
+.feedback-summary strong { color: var(--ink-mid); }
+
+.audio-bar {
+  background: var(--navy-light); border: 1px solid var(--border);
+  padding: 10px 14px; border-radius: 6px;
+  display: flex; align-items: center; gap: 10px; margin: 12px 0; flex-wrap: wrap;
+}
+.audio-bar a {
+  color: var(--ink); font-weight: 600; font-size: 12px;
+  text-decoration: none; padding: 4px 10px; background: white;
+  border-radius: 5px; border: 1px solid var(--border);
+}
+.audio-bar a:hover { background: var(--ink); color: white; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="brand-mark">MM</div>
+        <div>
+          <div class="brand-name">Man Matters</div>
+          <div class="brand-sub">Reorder Intelligence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-stats">
+      <div class="stat-pill red">
+        <div class="stat-pill-val" id="stat-high">0</div>
+        <div class="stat-pill-label">High risk</div>
+      </div>
+      <div class="stat-pill amber">
+        <div class="stat-pill-val" id="stat-medium">0</div>
+        <div class="stat-pill-label">Medium risk</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-pill-val" id="stat-total">0</div>
+        <div class="stat-pill-label">Total users</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-pill-val" id="stat-pending">0</div>
+        <div class="stat-pill-label">Not contacted</div>
+      </div>
+    </div>
+
+    <div class="sidebar-filters">
+      <div class="filter-label">Filter by risk</div>
+      <div class="filter-btns" id="filter-risk">
+        <button class="filter-btn active" data-filter="all">All users <span class="filter-btn-count" id="count-all">0</span></button>
+        <button class="filter-btn" data-filter="high">High risk <span class="filter-btn-count" id="count-high">0</span></button>
+        <button class="filter-btn" data-filter="medium">Medium risk <span class="filter-btn-count" id="count-medium">0</span></button>
+        <button class="filter-btn" data-filter="low">Low risk <span class="filter-btn-count" id="count-low">0</span></button>
+      </div>
+
+      <div class="filter-label">Filter by action</div>
+      <div class="filter-btns" id="filter-action">
+        <button class="filter-btn active" data-filter-action="all">All actions <span class="filter-btn-count" id="count-action-all">0</span></button>
+        <button class="filter-btn" data-filter-action="clinical_followup">Clinical follow-up <span class="filter-btn-count" id="count-clinical">0</span></button>
+        <button class="filter-btn" data-filter-action="adherence_recovery_call">Adherence call <span class="filter-btn-count" id="count-adherence">0</span></button>
+        <button class="filter-btn" data-filter-action="personal_call">Personal call <span class="filter-btn-count" id="count-call">0</span></button>
+        <button class="filter-btn" data-filter-action="whatsapp_nudge">WhatsApp nudge <span class="filter-btn-count" id="count-wa">0</span></button>
+      </div>
+
+      <div class="filter-label">Filter by stage</div>
+      <div class="filter-btns" id="filter-stage">
+        <button class="filter-btn active" data-filter-stage="all">All stages <span class="filter-btn-count" id="count-stage-all">0</span></button>
+        <button class="filter-btn" data-filter-stage="2">Stage 2 <span class="filter-btn-count" id="count-s2">0</span></button>
+        <button class="filter-btn" data-filter-stage="3">Stage 3 <span class="filter-btn-count" id="count-s3">0</span></button>
+        <button class="filter-btn" data-filter-stage="4">Stage 4 <span class="filter-btn-count" id="count-s4">0</span></button>
+      </div>
+
+      <div class="filter-label">Filter by cohort (M = month / cycle)</div>
+      <div class="filter-btns" id="filter-cohort">
+        <button class="filter-btn active" data-filter-cohort="all">All cohorts <span class="filter-btn-count" id="count-coh-all">0</span></button>
+        <button class="filter-btn" data-filter-cohort="M1">M1 non-reorderer <span class="filter-btn-count" id="count-coh-m1">0</span></button>
+        <button class="filter-btn" data-filter-cohort="M1_reorder">M1 reorderer <span class="filter-btn-count" id="count-coh-m1_reorder">0</span></button>
+        <button class="filter-btn" data-filter-cohort="M2">M2 <span class="filter-btn-count" id="count-coh-m2">0</span></button>
+        <button class="filter-btn" data-filter-cohort="repeat">Repeat (3-4 orders) <span class="filter-btn-count" id="count-coh-repeat">0</span></button>
+        <button class="filter-btn" data-filter-cohort="veteran">Veteran (5+) <span class="filter-btn-count" id="count-coh-veteran">0</span></button>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="last-updated" id="last-updated">Loading...</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">At-risk users</div>
+        <div class="topbar-sub" id="topbar-sub">Repeat customers overdue for reorder; sorted by days overdue</div>
+      </div>
+      <div class="topbar-right">
+        <div class="search-box">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Search users...
+        </div>
+      </div>
+    </div>
+
+    <!-- Main-view tab strip -->
+    <div class="main-tabs">
+      <button class="main-tab active" data-mtab="users" onclick="switchMainTab('users')">👤 Users</button>
+      <button class="main-tab" data-mtab="protocol" onclick="switchMainTab('protocol')">📈 Protocol compliance</button>
+      <button class="main-tab" data-mtab="quality" onclick="switchMainTab('quality')">📊 Quality dashboard</button>
+    </div>
+
+    <div class="reviewer-bar" id="users-bar">
+      <span style="font-weight:600;color:var(--ink-mid);">Reviewer:</span>
+      <input type="text" id="reviewer-name" placeholder="Your name" oninput="saveReviewerName()">
+      <span class="spacer"></span>
+      <button class="outline" onclick="openGuide()">📖 Scoring guide</button>
+      <button class="outline" onclick="openInsights()">📊 M1 Insights</button>
+      <button class="outline" onclick="openReordererInsights()">📈 Reorderer Protocol</button>
+      <span class="feedback-summary"><strong id="feedback-count">0</strong> reviews</span>
+      <button class="outline" onclick="exportFeedback()">⬇ Export</button>
+      <button class="outline" onclick="document.getElementById('import-feedback').click()">⬆ Import</button>
+      <input type="file" id="import-feedback" style="display:none" accept=".json" onchange="importFeedback(event)">
+      <button onclick="if(confirm('Clear all saved feedback?')) clearFeedback()">Clear</button>
+    </div>
+
+    <!-- Users pane (default) -->
+    <div class="main-pane" id="pane-users">
+      <div class="user-list">
+        <div class="list-header">
+          <div class="list-header-cell">Customer</div>
+          <div class="list-header-cell">Stage</div>
+          <div class="list-header-cell">Overdue</div>
+          <div class="list-header-cell">Risk</div>
+          <div class="list-header-cell">Main barrier</div>
+          <div class="list-header-cell">Call quality</div>
+          <div class="list-header-cell">Action</div>
+          <div class="list-header-cell">Status</div>
+        </div>
+        <div id="user-list-rows"></div>
+      </div>
+    </div>
+
+    <!-- Protocol compliance pane -->
+    <div class="main-pane" id="pane-protocol" style="display:none;">
+      <div id="protocol-dashboard"><!-- populated by renderProtocolDashboard() --></div>
+    </div>
+
+    <!-- Quality dashboard pane -->
+    <div class="main-pane" id="pane-quality" style="display:none;">
+      <div id="quality-dashboard"><!-- populated by renderQualityDashboard() --></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- OVERLAY -->
+<div class="card-overlay" id="overlay" onclick="closeCard()"></div>
+
+<!-- USER CARD -->
+<div class="user-card" id="user-card">
+  <div class="card-topbar">
+    <div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;color:var(--navy);" id="card-header-id">-</div>
+      <div style="font-size:11px;color:var(--ink-light);margin-top:2px;" id="card-header-sub">-</div>
+    </div>
+    <div class="card-close" onclick="closeCard()">×</div>
+  </div>
+  <div class="card-body" id="card-body"></div>
+</div>
+
+<!-- M1 INSIGHTS MODAL -->
+<div class="guide-overlay" id="insights-overlay" onclick="closeInsights()"></div>
+<div class="guide-modal insights-modal" id="insights-modal">
+  <div class="guide-head">
+    <div>
+      <div class="guide-title">M1 non-reorderer insights</div>
+      <div class="guide-sub">Computed live from 200 non-reorderer deep-reads (100 first-pass + 100 strict-rescored). Click a consult ID to jump to its card. For the reorderer comparison, see the Reorderer Protocol modal.</div>
+    </div>
+    <button class="card-close" onclick="closeInsights()">&times;</button>
+  </div>
+  <div class="guide-body" id="insights-body">
+    <!-- populated by renderInsights() -->
+  </div>
+</div>
+
+<!-- REORDERER PROTOCOL MODAL -->
+<div class="guide-overlay" id="reorder-overlay" onclick="closeReordererInsights()"></div>
+<div class="guide-modal insights-modal" id="reorder-modal">
+  <div class="guide-head">
+    <div>
+      <div class="guide-title">M1 reorderer protocol — apples-to-apples (delivered-only)</div>
+      <div class="guide-sub">3-script protocol compliance: shedding warning + tapering protocol + Day-30 follow-up. Cohort filtered to delivered-only orders (cancelled/RTO excluded). Both cohorts strict-scored against the same rubric.</div>
+    </div>
+    <button class="card-close" onclick="closeReordererInsights()">&times;</button>
+  </div>
+  <div class="guide-body" id="reorder-body">
+    <!-- populated by renderReordererInsights() -->
+  </div>
+</div>
+
+<!-- QUALITY DISTRIBUTION MODAL -->
+<div class="guide-overlay" id="quality-overlay" onclick="closeQualityInsights()"></div>
+<div class="guide-modal insights-modal" id="quality-modal" style="width:1080px;">
+  <div class="guide-head">
+    <div>
+      <div class="guide-title">Quality distribution — calls per score per dimension</div>
+      <div class="guide-sub">How many calls scored 1 (poor) / 2 (ok) / 3 (strong) on each consumer + doctor quality dimension. Toggle cohort to compare. Click a dimension's row to filter the user list to outliers.</div>
+    </div>
+    <button class="card-close" onclick="closeQualityInsights()">&times;</button>
+  </div>
+  <div class="guide-body" id="quality-body">
+    <!-- populated by renderQualityInsights() -->
+  </div>
+</div>
+
+<!-- SCORING GUIDE MODAL -->
+<div class="guide-overlay" id="guide-overlay" onclick="closeGuide()"></div>
+<div class="guide-modal" id="guide-modal">
+  <div class="guide-head">
+    <div>
+      <div class="guide-title">Scoring guide</div>
+      <div class="guide-sub">How each Yes / Mixed / No is defined - so any reviewer can verify by listening.</div>
+    </div>
+    <button class="card-close" onclick="closeGuide()">&times;</button>
+  </div>
+  <div class="guide-body">
+    <div class="guide-section">
+      <div class="guide-section-head">Consumer side - how the user felt</div>
+
+      <div class="guide-row">
+        <div class="guide-row-q">1. Were they reassured?</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">Yes</span> Patient&apos;s tone shifted positively by the end. Signals: <b>thanks / okay / will try</b>, calmer responses, or explicit reassurance acknowledged.</div>
+          <div class="def def-mixed"><span class="def-label">Partial</span> Some reassurance given by doctor but uncertainty remains - patient still hedging or asking the same Q.</div>
+          <div class="def def-no"><span class="def-label">Not really</span> Patient still anxious / uncertain at end. Signals: same concern raised twice without resolution, no closure phrases.</div>
+        </div>
+      </div>
+
+      <div class="guide-row">
+        <div class="guide-row-q">2. Was their doubt resolved?</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">Yes</span> Every concern the user raised was directly answered. No question left hanging.</div>
+          <div class="def def-mixed"><span class="def-label">Partial</span> Most addressed, <b>1 or 2 left vague</b> or punted to &ldquo;app coach&rdquo;.</div>
+          <div class="def def-no"><span class="def-label">No</span> Key questions not answered; user repeated concerns; doctor moved on.</div>
+        </div>
+      </div>
+
+      <div class="guide-row">
+        <div class="guide-row-q">3. Engagement level?</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">High</span> Long answers, volunteers info, asks <b>follow-up questions</b> on their own.</div>
+          <div class="def def-mixed"><span class="def-label">Medium</span> Adequate but mostly reactive. Yes/no responses + occasional clarification.</div>
+          <div class="def def-no"><span class="def-label">Passive</span> Monosyllabic. Doesn&apos;t volunteer anything. Doctor does <b>80%+ of the talking</b>.</div>
+        </div>
+      </div>
+
+      <div class="guide-row">
+        <div class="guide-row-q">4. Confusion markers?</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">None</span> No &ldquo;I don&apos;t understand&rdquo;, no repeated Qs, no long silences.</div>
+          <div class="def def-mixed"><span class="def-label">Few</span> 1&ndash;2 confusion moments, partially resolved.</div>
+          <div class="def def-no"><span class="def-label">Many</span> 3+ signals: repeated Qs, &ldquo;samajh nahi aaya&rdquo;, long silences after explanation.</div>
+        </div>
+      </div>
+
+      <div class="guide-row">
+        <div class="guide-row-q">5. Clear closure (next steps + what to expect)?</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">Yes</span> All three covered: <b>(a)</b> clear next steps stated, <b>(b)</b> what to expect (timeline / shedding / when results show), <b>(c)</b> follow-up date or way to reach back.</div>
+          <div class="def def-mixed"><span class="def-label">Partial</span> 2 of 3 covered (e.g. next steps + timeline but no follow-up scheduled).</div>
+          <div class="def def-no"><span class="def-label">No</span> 0 or 1 of 3. Call ends without clear plan.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-section-head">Doctor side - how the call was handled</div>
+
+      <div class="guide-row">
+        <div class="guide-row-q">6. Actively listening?</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">Yes</span> Doctor <b>references specific things the user said</b>; follow-up Qs based on user&apos;s answers (e.g. &ldquo;you said you used X for 2 years - why did you stop?&rdquo;).</div>
+          <div class="def def-mixed"><span class="def-label">Mixed</span> Mostly listening but some generic responses; doesn&apos;t probe deeper when user opens up.</div>
+          <div class="def def-no"><span class="def-label">Script-driven</span> Follows checklist regardless of what user says. Skips past important reveals.</div>
+        </div>
+      </div>
+
+      <div class="guide-row">
+        <div class="guide-row-q">7. Personalised vs generic?</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">Personalised</span> Recommendation tied to user&apos;s <b>specific stage, history, and what they said</b>. Names their case.</div>
+          <div class="def def-mixed"><span class="def-label">Mixed</span> Some personalisation (mentions stage) but mostly standard regime.</div>
+          <div class="def def-no"><span class="def-label">Generic</span> Standard script regardless of user&apos;s situation.</div>
+        </div>
+      </div>
+
+      <div class="guide-row">
+        <div class="guide-row-q">8. Completeness - covered all 5?</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">All 5</span> All five covered: <b>(1) diagnosis (2) treatment (3) side effects (4) timeline (5) expectations</b>.</div>
+          <div class="def def-mixed"><span class="def-label">3&ndash;4 of 5</span> Most but missing 1&ndash;2 (commonly: timeline or expectations skipped).</div>
+          <div class="def def-no"><span class="def-label">1&ndash;2 of 5</span> Only diagnosis + treatment; rest skipped.</div>
+        </div>
+      </div>
+
+      <div class="guide-row">
+        <div class="guide-row-q">9. Empathy shown?</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">Warm</span> Doctor names user&apos;s anxiety, normalises (&ldquo;<b>many people have this at your age</b>&rdquo;), patient and warm tone.</div>
+          <div class="def def-mixed"><span class="def-label">Neutral</span> Professional but neutral. No explicit emotional acknowledgment.</div>
+          <div class="def def-no"><span class="def-label">Clinical</span> Clinical, rushed, or dismissive. User shows worry, doctor moves past it.</div>
+        </div>
+      </div>
+
+      <div class="guide-row">
+        <div class="guide-row-q">10. No product pushing?</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">Right products only</span> Products match the diagnosed stage exactly. No upsell.</div>
+          <div class="def def-mixed"><span class="def-label">Borderline</span> One borderline recommendation (e.g. adds a serum that&apos;s nice-to-have but not core).</div>
+          <div class="def def-no"><span class="def-label">Pushed extras</span> <b>Multiple products beyond what the stage requires</b>. User showed cost concern; doctor ignored it.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-section-head">Supporting tactics (layered onto the primary action)</div>
+      <div style="font-size:12.5px;line-height:1.55;color:var(--ink-mid);">
+        Tactics aren't replacements for the primary action - they're moves the CRM agent layers in during the call. A user can have 0 to 3 tactics depending on signals seen.
+      </div>
+
+      <div class="guide-row" style="margin-top:14px;">
+        <div class="guide-row-q">💰 Discount offer / payment plan</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">Use when</span> User shows cost concern (asked about billing, refund, replacement, or implicit cost via long silence after a heavy regime). Offer 3-month bundle, instalments, or % discount. Don't dilute the medical regime.</div>
+        </div>
+      </div>
+
+      <div class="guide-row">
+        <div class="guide-row-q">⭐ Social proof / "user like you"</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">Use when</span> User has discontinuation history, anxiety/uncertainty about results, or fatigue after multiple cycles. Reference a peer-success story: "users who continued for 6 months saw growth", "users with similar Stage 3 and dandruff saw clear results", etc.</div>
+        </div>
+      </div>
+
+      <div class="guide-row">
+        <div class="guide-row-q">📉 Simplified regime</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">Use when</span> Doctor stacked 5+ products and routine complexity is likely the blocker. Walk through habit-stacking or phased entry (e.g. dandruff treatment first, minoxidil after 15 days). Don't reduce the medical plan, just sequence it.</div>
+        </div>
+      </div>
+
+      <div class="guide-row">
+        <div class="guide-row-q">🩺 Senior doctor consult</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">Use when</span> Results plateaued after multiple cycles, or there's a medical signal (e.g. genetic, hormonal, or non-AGA condition like alopecia areata) that needs specialist review. Escalate, don't recycle.</div>
+        </div>
+      </div>
+
+      <div class="guide-row">
+        <div class="guide-row-q">📊 Results check-in (no sales)</div>
+        <div class="guide-row-defs">
+          <div class="def def-yes"><span class="def-label">Use when</span> User is in a medical pause, treatment fatigue, or has been silent so long that any sales push will erode trust. First touch is purely health-focused: "Did you see any change?" / "Did you go to the dermatologist?" Sales conversation comes later, only if relevant.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-section-head">Confidence tag (HIGH / MEDIUM / LOW)</div>
+      <div style="font-size:13px;line-height:1.6;color:var(--ink-mid);">
+        <b style="color:var(--sage);">HIGH</b> - multiple corroborating phrases in transcript, or English transcript where keywords are clear.<br>
+        <b style="color:var(--amber);">MEDIUM</b> - one mention or inferred from context. Should verify by listening to the audio.<br>
+        <b style="color:var(--coral);">LOW</b> - ambiguous or extracted from a Hindi transcript where STT may have garbled product / brand names.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="users.js"></script>
+<script>
+// ── State ──
+let activeUser = null
+let filters = { risk: 'all', action: 'all', stage: 'all', cohort: 'all' }
+let statuses = {}
+
+// Feedback state (per consult_id → field_key → {verdict, correction, reviewer, timestamp})
+const FEEDBACK_KEY = 'hri_feedback_v1'
+const REVIEWER_KEY = 'hri_reviewer_v1'
+let feedback = {}
+let reviewerName = ''
+try {
+  feedback = JSON.parse(localStorage.getItem(FEEDBACK_KEY) || '{}')
+  reviewerName = localStorage.getItem(REVIEWER_KEY) || ''
+} catch (e) { feedback = {} }
+
+// Helpers; schema-agnostic accessors (handles {value, confidence} or plain string)
+const valOf = (x) => (x && typeof x === 'object' && 'value' in x) ? x.value : x
+const scoreOf = (x) => (x && typeof x === 'object' && 'score' in x) ? x.score : (typeof x === 'number' ? x : null)
+const confOf = (x) => (x && typeof x === 'object' && x.confidence) ? x.confidence : 'HIGH'
+
+// Action display
+const ACTION_LABELS = {
+  'personal_call': 'Personal call',
+  'whatsapp_nudge': 'WhatsApp nudge',
+  'clinical_followup': 'Clinical follow-up',
+  'adherence_recovery_call': 'Adherence call',
+  'confused_resolution': 'Re-engage',
+  'no_action': 'Monitor'
+}
+const ACTION_CLASSES = {
+  'personal_call': 'call', 'adherence_recovery_call': 'call',
+  'whatsapp_nudge': 'whatsapp', 'clinical_followup': 'clinical',
+  'confused_resolution': 'whatsapp', 'no_action': 'none'
+}
+
+// ── Boot ──
+function boot() {
+  document.getElementById('reviewer-name').value = reviewerName
+  updateFeedbackCount()
+  updateCounts()
+  renderList()
+  document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function getFiltered() {
+  return USERS.filter(u => {
+    if (filters.risk !== 'all' && u.reorder_signal.risk_level !== filters.risk) return false
+    if (filters.action !== 'all' && valOf(u.suggested_action) !== filters.action) return false
+    if (filters.stage !== 'all' && String(u.hair_stage) !== filters.stage) return false
+    if (filters.cohort !== 'all' && (u.m_cohort || '') !== filters.cohort) return false
+    return true
+  }).sort((a,b) => b.reorder_signal.days_overdue - a.reorder_signal.days_overdue)
+}
+
+function updateCounts() {
+  const u = USERS
+  const actionVal = (x) => valOf(x.suggested_action)
+  document.getElementById('stat-total').textContent   = u.length
+  document.getElementById('stat-high').textContent    = u.filter(x => x.reorder_signal.risk_level === 'high').length
+  document.getElementById('stat-medium').textContent  = u.filter(x => x.reorder_signal.risk_level === 'medium').length
+  document.getElementById('stat-pending').textContent = u.filter(x => !statuses[x.customer_id]).length
+  document.getElementById('count-all').textContent    = u.length
+  document.getElementById('count-high').textContent   = u.filter(x => x.reorder_signal.risk_level === 'high').length
+  document.getElementById('count-medium').textContent = u.filter(x => x.reorder_signal.risk_level === 'medium').length
+  document.getElementById('count-low').textContent    = u.filter(x => x.reorder_signal.risk_level === 'low').length
+  document.getElementById('count-action-all').textContent = u.length
+  document.getElementById('count-call').textContent     = u.filter(x => actionVal(x) === 'personal_call').length
+  document.getElementById('count-wa').textContent       = u.filter(x => actionVal(x) === 'whatsapp_nudge').length
+  const ce = document.getElementById('count-clinical');   if (ce) ce.textContent   = u.filter(x => actionVal(x) === 'clinical_followup').length
+  const ae = document.getElementById('count-adherence');  if (ae) ae.textContent   = u.filter(x => actionVal(x) === 'adherence_recovery_call').length
+
+  // Cohort counts
+  const cohorts = { all: u.length, M1: 0, M1_reorder: 0, M2: 0, repeat: 0, veteran: 0 }
+  u.forEach(x => { if (cohorts[x.m_cohort] !== undefined) cohorts[x.m_cohort]++ })
+  const setIfPresent = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n }
+  setIfPresent('count-coh-all', cohorts.all)
+  setIfPresent('count-coh-m1', cohorts.M1)
+  setIfPresent('count-coh-m1_reorder', cohorts.M1_reorder)
+  setIfPresent('count-coh-m2', cohorts.M2)
+  setIfPresent('count-coh-repeat', cohorts.repeat)
+  setIfPresent('count-coh-veteran', cohorts.veteran)
+
+  // Dim filter buttons whose bucket has 0 users; so it's visually obvious which clicks would yield nothing.
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    const c = btn.querySelector('.filter-btn-count')
+    const n = c ? parseInt(c.textContent || '0', 10) : 1
+    btn.classList.toggle('empty', n === 0 && !btn.classList.contains('active'))
+  })
+  document.getElementById('count-stage-all').textContent = u.length
+  document.getElementById('count-s2').textContent     = u.filter(x => x.hair_stage === 2).length
+  document.getElementById('count-s3').textContent     = u.filter(x => x.hair_stage === 3).length
+  document.getElementById('count-s4').textContent     = u.filter(x => x.hair_stage === 4).length
+}
+
+// ── Feedback storage ──
+function saveFeedback() { localStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedback)) }
+function saveReviewerName() {
+  reviewerName = document.getElementById('reviewer-name').value.trim()
+  localStorage.setItem(REVIEWER_KEY, reviewerName)
+}
+function getFieldFeedback(consultId, fieldKey) {
+  return (feedback[consultId] || {})[fieldKey] || null
+}
+function setVerdict(consultId, fieldKey, verdict) {
+  if (!feedback[consultId]) feedback[consultId] = {}
+  if (!feedback[consultId][fieldKey]) feedback[consultId][fieldKey] = {}
+  feedback[consultId][fieldKey].verdict = verdict
+  feedback[consultId][fieldKey].reviewer = reviewerName || 'unknown'
+  feedback[consultId][fieldKey].timestamp = new Date().toISOString()
+  saveFeedback()
+  // Update DOM
+  const el = document.querySelector(`[data-consult="${consultId}"][data-field="${fieldKey}"]`)
+  if (el) {
+    el.classList.remove('verdict-correct', 'verdict-wrong')
+    el.classList.add(verdict ? 'verdict-correct' : 'verdict-wrong')
+    el.querySelectorAll('.verdict-btn').forEach(b => b.classList.remove('active'))
+    const btn = el.querySelector(verdict ? '.verdict-btn.correct' : '.verdict-btn.wrong')
+    if (btn) btn.classList.add('active')
+    const corr = el.querySelector('.correction-input')
+    if (corr) corr.classList.toggle('show', !verdict)
+  }
+  updateFeedbackCount()
+}
+function setCorrection(consultId, fieldKey, text) {
+  if (!feedback[consultId]) feedback[consultId] = {}
+  if (!feedback[consultId][fieldKey]) feedback[consultId][fieldKey] = {}
+  feedback[consultId][fieldKey].correction = text
+  feedback[consultId][fieldKey].reviewer = reviewerName || 'unknown'
+  feedback[consultId][fieldKey].timestamp = new Date().toISOString()
+  saveFeedback()
+}
+function updateFeedbackCount() {
+  const total = Object.values(feedback).reduce((sum, obj) =>
+    sum + Object.values(obj).filter(f => f.verdict !== undefined).length, 0)
+  const el = document.getElementById('feedback-count')
+  if (el) el.textContent = total
+}
+function exportFeedback() {
+  const blob = new Blob([JSON.stringify(feedback, null, 2)], { type: 'application/json' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `hri_feedback_${new Date().toISOString().slice(0, 10)}_${reviewerName||'reviewer'}.json`
+  a.click()
+}
+function importFeedback(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result)
+      Object.keys(imported).forEach(cid => {
+        feedback[cid] = { ...(feedback[cid] || {}), ...imported[cid] }
+      })
+      saveFeedback(); updateFeedbackCount()
+      if (activeUser) openCard(activeUser)
+      alert('Feedback merged from ' + file.name)
+    } catch (e) { alert('Error reading file: ' + e.message) }
+  }
+  reader.readAsText(file)
+  event.target.value = ''
+}
+function clearFeedback() {
+  feedback = {}; saveFeedback(); updateFeedbackCount()
+  if (activeUser) openCard(activeUser)
+}
+
+// ── List render ──
+function renderList() {
+  const data = getFiltered()
+  const container = document.getElementById('user-list-rows')
+  document.getElementById('topbar-sub').textContent = `${data.length} user${data.length !== 1 ? 's' : ''}; sorted by days overdue`
+
+  if (!data.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">◎</div><div class="empty-title">No users match this filter</div><div class="empty-sub">Try changing the filter on the left</div></div>`
+    return
+  }
+
+  container.innerHTML = data.map(u => {
+    const risk = u.reorder_signal.risk_level
+    const barriersList = valOf(u.user_context?.barriers) || []
+    const barrier = (Array.isArray(barriersList) ? barriersList[0] : barriersList) || '-'
+    const emotion = valOf(u.user_context?.emotional_state) || null
+    const cq = u.consumer_quality || {}
+    const dq = u.doctor_quality || {}
+    const action = valOf(u.suggested_action)
+    const status = statuses[u.customer_id] || 'pending'
+
+    const qualityDots = (cq.reassurance || dq.personalisation) ? [
+      `<div class="qdot ${scoreClass(avgScore([scoreOf(cq.reassurance), scoreOf(cq.closure), scoreOf(cq.doubt_resolution)]))}"></div>`,
+      `<div class="qdot ${scoreClass(avgScore([scoreOf(dq.personalisation), scoreOf(dq.completeness), scoreOf(dq.empathy)]))}"></div>`,
+    ].join('') : '<div class="qdot qdot-null"></div><div class="qdot qdot-null"></div>'
+
+    const actionLabel = ACTION_LABELS[action] || action
+    const actionClass = ACTION_CLASSES[action] || 'none'
+    const fbCount = Object.values(feedback[u.consult_id] || {}).filter(f => f.verdict !== undefined).length
+    const fbBadge = fbCount > 0 ? `<span style="margin-left:6px;font-size:10px;color:var(--sage);">${fbCount} reviewed</span>` : ''
+    const cohort = u.m_cohort
+    const cohortBadge = cohort ? `<span class="cohort-badge cohort-${cohort.toLowerCase()}">${cohort}</span>` : ''
+    const deepRead = (u.flags || []).includes('deep_read')
+    const deepBadge = deepRead ? `<span class="deep-read-badge" title="Transcript-grounded analysis (not heuristic)">deep</span>` : ''
+
+    // Reorderer cards don't have days_overdue (they converted) — show days-to-reorder instead
+    const isReorderer = u.m_cohort === 'M1_reorder'
+    const dueDays = u.reorder_signal?.days_overdue ?? null
+    const daysToNext = u.reorder_signal?.days_to_next_order ?? null
+    const dueCell = isReorderer
+      ? `<span style="font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;color:#166534;">+${daysToNext}</span><span class="cell-light"> days to reorder</span>`
+      : `<span style="font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;">${dueDays ?? '—'}</span><span class="cell-light"> days</span>`
+
+    // For reorderer cards the "barrier" cell is meaningless; show protocol scoring instead
+    const barrierCell = (() => {
+      if (!isReorderer) return `<div class="cell" style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${barrier}">${barrier}</div>`
+      const p = u.summary?.protocol_compliance || {}
+      const tick = (v) => v === true ? '<span style="color:#166534;font-weight:700">✓</span>' : v === false ? '<span style="color:#991b1b">✗</span>' : '<span style="color:var(--ink-light)">—</span>'
+      return `<div class="cell" style="font-size:11px;" title="3-script protocol: shedding / taper / day-30">Shed ${tick(p.shedding_warning)} · Taper ${tick(p.tapering_protocol)} · D30 ${tick(p.day30_followup)}</div>`
+    })()
+
+    return `<div class="user-row${activeUser === u.customer_id ? ' selected' : ''}" onclick="openCard('${u.customer_id}')">
+      <div class="cell cell-id">${u.customer_id}${cohortBadge}${deepBadge}${fbBadge}</div>
+      <div class="cell">Stage ${u.hair_stage}</div>
+      <div class="cell">${dueCell}</div>
+      <div class="cell"><span class="risk-badge risk-${risk}">${risk}</span></div>
+      ${barrierCell}
+      <div class="cell"><div class="quality-dots">${qualityDots}${emotion ? `<span style="font-size:10px;color:var(--ink-light);margin-left:4px;">${emotion}</span>` : ''}</div></div>
+      <div class="cell"><span class="action-tag action-${actionClass}">${actionLabel}</span></div>
+      <div class="cell"><span class="status-dot status-${status}"></span><span style="font-size:11px;color:var(--ink-light);">${status === 'pending' ? 'Not contacted' : status}</span></div>
+    </div>`
+  }).join('')
+}
+
+function avgScore(arr) {
+  const valid = arr.filter(x => x !== null && x !== undefined)
+  if (!valid.length) return null
+  return valid.reduce((a,b) => a+b, 0) / valid.length
+}
+
+function scoreClass(avg) {
+  if (avg === null) return 'qdot-null'
+  if (avg >= 2.5) return 'qdot-good'
+  if (avg >= 1.5) return 'qdot-mid'
+  return 'qdot-bad'
+}
+
+// ── Card ──
+function openCard(id) {
+  const u = USERS.find(x => x.customer_id === id)
+  if (!u) return
+  activeUser = id
+  renderList()
+
+  document.getElementById('card-header-id').textContent = `Customer ${u.customer_id} · Consult ${u.consult_id}`
+  document.getElementById('card-header-sub').textContent = `Stage ${u.hair_stage} · ${u.order_product_name} · ${u.consult_date}`
+
+  const cid = u.consult_id
+  const status = statuses[id] || 'pending'
+  const cq = u.consumer_quality || {}
+  const dq = u.doctor_quality || {}
+  const ctx = u.user_context || {}
+  const q = u.quotes || {}
+  const action = valOf(u.suggested_action)
+  const stageWarning = (u.hair_stage_ordered && u.hair_stage_diagnosed && u.hair_stage_ordered !== u.hair_stage_diagnosed)
+    ? `<span class="meta-chip" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5;">⚠ Ordered S${u.hair_stage_ordered} but diagnosed S${u.hair_stage_diagnosed}</span>` : ''
+
+  document.getElementById('card-body').innerHTML = `
+
+    <div class="card-hero">
+      <div class="card-hero-top">
+        <div>
+          <div class="card-name">Customer ${u.customer_id}</div>
+          <div class="card-meta">
+            <span class="meta-chip">Stage ${u.hair_stage}</span>
+            ${stageWarning}
+            <span class="meta-chip">Consult #${u.consult_number}</span>
+            <span class="meta-chip">Order #${u.user_order_number}</span>
+            <span class="meta-chip">${u.consult_date}</span>
+            <span class="meta-chip">${u.consultation.duration_seconds ? Math.round(u.consultation.duration_seconds/60)+'m '+(u.consultation.duration_seconds%60)+'s' : 'no audio'}</span>
+            ${u.consultation.language ? `<span class="meta-chip">${u.consultation.language.toUpperCase()}</span>` : ''}
+            <span class="meta-chip" style="background:var(--sage-light);color:var(--sage);border-color:#6ee7b7;">Transcript available</span>
+          </div>
+        </div>
+        <div class="overdue-flag">
+          <div class="overdue-days">${u.reorder_signal.days_overdue}d</div>
+          <div class="overdue-label">overdue<br><span style="color:#b91c1c;font-size:9px;">${u.reorder_signal.risk_level.toUpperCase()} RISK</span></div>
+        </div>
+      </div>
+    </div>
+
+    ${u.consultation.audio_call_link ? `
+    <div class="audio-bar">
+      <span style="font-weight:600;color:var(--ink);font-size:12px;">🎧 Call</span>
+      <a href="${u.consultation.audio_call_link}" target="_blank">▶ Play audio</a>
+      ${u.consultation.transcript_file ? `<a href="${u.consultation.transcript_file}" target="_blank">📄 Transcript</a>` : ''}
+      <span style="flex:1"></span>
+      <span style="font-size:11px;color:var(--ink-light);">${u.consultation.duration_seconds}s · ${u.consultation.language || ''}</span>
+    </div>` : ''}
+
+    <div class="signal-row">
+      <span class="signal-pair"><span class="signal-key">Last order</span><span class="signal-val">${u.reorder_signal.days_since_previous_order} days ago</span></span>
+      <span class="signal-pair"><span class="signal-key">Regime length</span><span class="signal-val">${u.reorder_signal.total_regime_days} days</span></span>
+      <span class="signal-pair"><span class="signal-key">Overdue by</span><span class="signal-val signal-warn">${u.reorder_signal.days_overdue} days</span></span>
+      <span class="signal-pair"><span class="signal-key">Risk</span><span class="signal-val">${u.reorder_signal.risk_level.toUpperCase()}</span></span>
+    </div>
+
+    <details class="raw-data">
+      <summary>Raw consultation data (doctor remarks, prescribed product IDs)</summary>
+      <div style="font-size:12.5px;color:var(--ink-mid);line-height:1.6;margin-top:8px;">
+        <div><span style="color:var(--ink-light);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Doctor remarks</span><br>${escapeHtml(u.consultation.doctor_remarks_raw || '-')}</div>
+        <div style="margin-top:8px;"><span style="color:var(--ink-light);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Patient remarks</span><br>${escapeHtml(u.consultation.patient_remarks || '-')}</div>
+        <div style="margin-top:8px;"><span style="color:var(--ink-light);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Prescribed prods (IDs)</span><br>${escapeHtml(u.consultation.prescribed_prods || '-')}</div>
+      </div>
+    </details>
+
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="sum" onclick="switchTab(this, 'sum')">Summary</button>
+      <button class="tab-btn" data-tab="ctx" onclick="switchTab(this, 'ctx')">User context</button>
+      <button class="tab-btn" data-tab="qual" onclick="switchTab(this, 'qual')">Call quality</button>
+      <button class="tab-btn" data-tab="act"  onclick="switchTab(this, 'act')">Action &amp; outreach</button>
+    </div>
+
+    <div class="tab-pane active" data-pane="sum">
+      ${renderSummary(u.summary)}
+    </div>
+
+    <div class="tab-pane" data-pane="ctx">
+      <div class="field-grid">
+        ${displayField('Main concern', ctx.main_concern, {quote: q.main_concern, fullWidth: true})}
+        ${displayField('Emotional state', ctx.emotional_state, {quote: q.emotional_state})}
+        ${displayField('Trigger', ctx.trigger, {quote: q.trigger})}
+        ${displayField('Expected outcome', ctx.expectations_outcome)}
+        ${displayField('Expected timeline', ctx.expectations_timeline)}
+        ${displayField('Barriers', ctx.barriers, {quote: q.barrier, fullWidth: true})}
+        ${displayField('Past treatment', ctx.past_treatment, {fullWidth: true})}
+        ${displayField('Confusion markers', ctx.confusion_markers, {quote: q.confusion_markers, fullWidth: true})}
+        ${displayField('Products mentioned', ctx.products_mentioned, {fullWidth: true})}
+      </div>
+      ${u.flags?.length ? `<div style="margin-top:14px;"><div class="field-label" style="margin-bottom:6px;">Flags</div><div class="flags-list">${u.flags.map(f => `<span class="flag-tag">${f}</span>`).join('')}</div></div>` : ''}
+      ${sectionVerdict(cid, '__section_user_context')}
+    </div>
+
+    <div class="tab-pane" data-pane="qual">
+      <div class="qual-group-label"><span class="qg-icon">👤</span> Consumer side: how the user felt</div>
+      ${displayScore('Were they reassured?',                 cq.reassurance,         {3:'Yes',     2:'Partial',  1:'Not really'})}
+      ${displayScore('Was their doubt resolved?',            cq.doubt_resolution,    {3:'Yes',     2:'Partial',  1:'No'})}
+      ${displayScore('Engagement level?',                    cq.engagement,          {3:'High',    2:'Medium',   1:'Passive'})}
+      ${displayScore('Confusion markers?',                   cq.confusion_markers,   {3:'None',    2:'Few',      1:'Many'})}
+      ${displayScore('Clear closure (next steps + what to expect)?', cq.closure,     {3:'Yes',     2:'Partial',  1:'No'})}
+
+      <div class="qual-group-label" style="margin-top:18px;"><span class="qg-icon">🩺</span> Doctor side: how the call was handled</div>
+      ${displayScore('Actively listening?',                  dq.active_listening,    {3:'Yes',     2:'Mixed',    1:'Script-driven'})}
+      ${displayScore('Personalised vs generic?',             dq.personalisation,     {3:'Personalised', 2:'Mixed', 1:'Generic'})}
+      ${displayScore('Completeness; covered all 5?',        dq.completeness,        {3:'All 5',   2:'3-4 of 5', 1:'1-2 of 5'})}
+      ${displayScore('Empathy shown?',                       dq.empathy,             {3:'Warm',    2:'Neutral',  1:'Clinical'})}
+      ${displayScore('No product pushing?',                  dq.no_product_pushing,  {3:'Right products only', 2:'Borderline', 1:'Pushed extras'})}
+
+      ${sectionVerdict(cid, '__section_quality')}
+    </div>
+
+    <div class="tab-pane" data-pane="act">
+      ${renderSuggestedAction(u.suggested_action)}
+      ${renderOutreachPlan(u.outreach_plan)}
+      ${renderSupportingTactics(u.supporting_tactics)}
+      ${sectionVerdict(cid, '__section_action')}
+    </div>
+
+    <div class="card-section">
+      <div class="status-controls">
+        <button class="status-btn ${status === 'contacted' ? 'active-contacted' : ''}" onclick="setStatus('${id}', 'contacted')">Mark contacted</button>
+        <button class="status-btn ${status === 'converted' ? 'active-converted' : ''}" onclick="setStatus('${id}', 'converted')">Mark converted</button>
+        <button class="status-btn" onclick="setStatus('${id}', 'pending')">Reset</button>
+      </div>
+    </div>
+  `
+
+  document.getElementById('overlay').classList.add('open')
+  document.getElementById('user-card').classList.add('open')
+}
+
+// ── Display-only field renderer ──
+// Arrays render as tag chips. Single short strings render as plain text.
+// Confidence shown as a thin colored left-bar (no ugly badges).
+function displayField(label, fieldObj, opts = {}) {
+  if (!fieldObj) return ''
+  const value = valOf(fieldObj)
+  if (value === null || value === undefined || value === '') return ''
+  const conf = confOf(fieldObj)
+  const valueHtml = Array.isArray(value)
+    ? `<div class="tag-cloud">${value.map(v => `<span class="tag-chip">${escapeHtml(v)}</span>`).join('')}</div>`
+    : `<div class="field-text">${escapeHtml(String(value))}</div>`
+  const wide = opts.fullWidth || Array.isArray(value) || (typeof value === 'string' && value.length > 60)
+  const confClass = `conf-${conf.toLowerCase()}`
+  return `<div class="field-block ${wide ? 'full-width' : ''} ${confClass}">
+    <div class="field-label">${label}</div>
+    ${valueHtml}
+  </div>`
+}
+
+// ── Section verdict; one ✓/✗ + correction box per section ──
+function sectionVerdict(consultId, sectionKey) {
+  const fb = getFieldFeedback(consultId, sectionKey) || {}
+  const verdictClass = fb.verdict === true ? 'verdict-correct' : fb.verdict === false ? 'verdict-wrong' : 'verdict-pending'
+  const correctActive = fb.verdict === true ? 'active' : ''
+  const wrongActive = fb.verdict === false ? 'active' : ''
+  const showCorrection = fb.verdict === false ? 'show' : ''
+  const correctionText = fb.correction || ''
+  const reviewerInfo = fb.reviewer ? `by ${escapeHtml(fb.reviewer)}` : ''
+  return `<div class="section-verdict ${verdictClass}" data-consult="${consultId}" data-field="${sectionKey}">
+    <span class="sv-prompt">Is this section correct?</span>
+    <button class="verdict-btn correct ${correctActive}" onclick="setSectionVerdict('${consultId}','${sectionKey}',true)">✓ Looks right</button>
+    <button class="verdict-btn wrong ${wrongActive}" onclick="setSectionVerdict('${consultId}','${sectionKey}',false)">✗ Something's off</button>
+    <span class="verdict-spacer"></span>
+    <span class="sv-reviewer">${reviewerInfo}</span>
+    <div class="correction-input ${showCorrection}" style="flex-basis:100%;margin-top:8px;">
+      <textarea placeholder="What's wrong or missing? (Free text; be as specific or brief as you like.)"
+        oninput="setCorrection('${consultId}','${sectionKey}', this.value)">${escapeHtml(correctionText)}</textarea>
+    </div>
+  </div>`
+}
+
+// Section verdict click; wraps setVerdict but updates DOM differently (whole section row)
+function setSectionVerdict(consultId, sectionKey, verdict) {
+  if (!feedback[consultId]) feedback[consultId] = {}
+  if (!feedback[consultId][sectionKey]) feedback[consultId][sectionKey] = {}
+  feedback[consultId][sectionKey].verdict = verdict
+  feedback[consultId][sectionKey].reviewer = reviewerName || 'unknown'
+  feedback[consultId][sectionKey].timestamp = new Date().toISOString()
+  saveFeedback()
+  const el = document.querySelector(`.section-verdict[data-consult="${consultId}"][data-field="${sectionKey}"]`)
+  if (el) {
+    el.classList.remove('verdict-correct','verdict-wrong','verdict-pending')
+    el.classList.add(verdict ? 'verdict-correct' : 'verdict-wrong')
+    el.querySelectorAll('.verdict-btn').forEach(b => b.classList.remove('active'))
+    const btn = el.querySelector(verdict ? '.verdict-btn.correct' : '.verdict-btn.wrong')
+    if (btn) btn.classList.add('active')
+    const corr = el.querySelector('.correction-input')
+    if (corr) corr.classList.toggle('show', !verdict)
+  }
+  updateFeedbackCount()
+}
+
+// Display-only quality dimension; shows the QUESTION + a Yes/Mixed/No answer
+// labelMap is per-dimension: { question, answers: {3: "Yes label", 2: "Mixed label", 1: "No label"} }
+function displayScore(question, scoreObj, answerMap) {
+  if (!scoreObj) return ''
+  const s = scoreOf(scoreObj)
+  const ans = (answerMap && answerMap[s]) || (s === 3 ? 'Yes' : s === 2 ? 'Mixed' : s === 1 ? 'No' : '-')
+  const ansClass = s === 3 ? 'ans-yes' : s === 2 ? 'ans-mixed' : s === 1 ? 'ans-no' : 'ans-null'
+
+  let componentsHtml = ''
+  if (scoreObj.components) {
+    componentsHtml = '<div class="comp-row">' +
+      Object.entries(scoreObj.components).map(([compKey, comp]) => {
+        const isCovered = comp.covered === true
+        const compLabel = compKey.replace(/_/g, ' ')
+        return `<span class="comp-chip ${isCovered ? 'comp-yes' : 'comp-no'}" title="${escapeHtml(comp.note || '')}">${isCovered ? '✓' : '✗'} ${compLabel}</span>`
+      }).join('') + '</div>'
+  }
+
+  return `<div class="qline">
+    <span class="qline-q">${question}</span>
+    <span class="qline-a ${ansClass}">${ans}</span>
+    ${componentsHtml}
+  </div>`
+}
+
+function escapeHtml(s) {
+  if (s === null || s === undefined) return ''
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+// Markup helper: escapes HTML first, then renders **bold** and `code`.
+// Use anywhere we want to emphasise key terms in source data without writing HTML.
+function md(s) {
+  if (s === null || s === undefined) return ''
+  let out = escapeHtml(String(s))
+  out = out.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+  out = out.replace(/`([^`]+)`/g, '<code>$1</code>')
+  return out
+}
+
+// Scoring guide modal
+function openGuide() {
+  document.getElementById('guide-overlay').classList.add('open')
+  document.getElementById('guide-modal').classList.add('open')
+}
+function closeGuide() {
+  document.getElementById('guide-overlay').classList.remove('open')
+  document.getElementById('guide-modal').classList.remove('open')
+}
+
+// M1 Insights modal
+function openInsights() {
+  renderInsights()
+  document.getElementById('insights-overlay').classList.add('open')
+  document.getElementById('insights-modal').classList.add('open')
+}
+function closeInsights() {
+  document.getElementById('insights-overlay').classList.remove('open')
+  document.getElementById('insights-modal').classList.remove('open')
+}
+function jumpToCard(cid) {
+  const u = USERS.find(x => String(x.consult_id) === String(cid))
+  if (u) {
+    closeInsights()
+    openCard(u.customer_id)
+  }
+}
+function renderInsights() {
+  const m1 = USERS.filter(u => u.m_cohort === 'M1')
+  const total = m1.length
+  if (total === 0) {
+    document.getElementById('insights-body').innerHTML = '<div class="insight-block-empty">No M1 cards yet.</div>'
+    return
+  }
+
+  // Compute aggregates from specific_context
+  const recentMove = m1.filter(u => u.summary?.specific_context?.recent_move === true)
+  const waterIssue = m1.filter(u => {
+    const w = (u.summary?.specific_context?.water_source || '').toLowerCase()
+    return /hard|borewell|fluoride|pump|cauvery|softener|mumbai|delhi/.test(w) && !/not assessed/i.test(w)
+  })
+  const familyHist = m1.filter(u => {
+    const fh = (u.summary?.specific_context?.family_history || '').toLowerCase()
+    return fh && !/none|not assessed|not disclosed|not stated|not clearly|no family/i.test(fh)
+  })
+  const priorTreatment = m1.filter(u => {
+    const pt = (u.summary?.specific_context?.prior_treatment || '').toLowerCase()
+    return pt && !/none|first|not specified|not assessed|not stated/i.test(pt)
+  })
+  const regimeExpanded = m1.filter(u => u.summary?.product_pushing_check?.extras_added === true)
+  const compFriction = m1.filter(u => {
+    const c = (u.summary?.specific_context?.comprehension || '').toLowerCase()
+    return /poor|severe|broken|failed|language|friction|code-switch/.test(c)
+  })
+
+  // Lifestyle bucket counts
+  const lifestyleBuckets = {
+    'Sleep / shift work': 0, 'Smoking': 0, 'Alcohol': 0, 'Stress': 0,
+    'Dandruff': 0, 'Water issues': 0, 'Diet issues': 0, 'No exercise': 0,
+    'Travel / relocation': 0, 'Medical condition': 0
+  }
+  m1.forEach(u => {
+    const risks = u.summary?.specific_context?.lifestyle_risk || []
+    risks.forEach(r => {
+      const rl = r.toLowerCase()
+      if (/sleep|night|shift|hospital|hostel/.test(rl)) lifestyleBuckets['Sleep / shift work']++
+      else if (/smok/.test(rl)) lifestyleBuckets['Smoking']++
+      else if (/alcohol|drink/.test(rl)) lifestyleBuckets['Alcohol']++
+      else if (/stress|tension/.test(rl)) lifestyleBuckets['Stress']++
+      else if (/dandruff/.test(rl)) lifestyleBuckets['Dandruff']++
+      else if (/water|hard/.test(rl)) lifestyleBuckets['Water issues']++
+      else if (/diet|veget|outside food|protein/.test(rl)) lifestyleBuckets['Diet issues']++
+      else if (/no exercise|no regular|less active/.test(rl)) lifestyleBuckets['No exercise']++
+      else if (/travel|move|location|relocat/.test(rl)) lifestyleBuckets['Travel / relocation']++
+      else if (/kidney|dengue|medical|surgery/.test(rl)) lifestyleBuckets['Medical condition']++
+    })
+  })
+
+  // Action / tactic distribution
+  const actions = {}
+  const tactics = {}
+  m1.forEach(u => {
+    const a = u.suggested_action?.value
+    if (a) actions[a] = (actions[a] || 0) + 1
+    const t = u.supporting_tactics?.[0]?.type
+    if (t) tactics[t] = (tactics[t] || 0) + 1
+  })
+
+  const pct = n => Math.round(n / total * 100)
+
+  const renderRows = (cards, mapper) => cards.map(u => {
+    const detail = mapper(u)
+    return `<div class="insight-row">
+      <span class="insight-cid" onclick="jumpToCard('${u.consult_id}')">${u.consult_id}</span>
+      <span class="insight-detail">${detail}</span>
+    </div>`
+  }).join('')
+
+  const renderBars = obj => {
+    const max = Math.max(...Object.values(obj), 1)
+    const sorted = Object.entries(obj).sort((a, b) => b[1] - a[1])
+    return sorted.map(([k, v]) => `
+      <div class="insight-bar-row">
+        <span class="insight-bar-label">${k}</span>
+        <div class="insight-bar-track"><div class="insight-bar-fill" style="width:${v/max*100}%"></div></div>
+        <span class="insight-bar-num">${v}</span>
+      </div>`).join('')
+  }
+
+  const html = `
+    <!-- Headline stats -->
+    <div class="insights-headline">
+      <div class="insights-stat"><div class="insights-stat-num">${total}</div><div class="insights-stat-label">M1 non-reorderer cards<br><span style="color:var(--ink-light);font-weight:400">(deep-read)</span></div></div>
+      <div class="insights-stat"><div class="insights-stat-num">${regimeExpanded.length} <span style="font-size:13px;color:var(--ink-light)">(${pct(regimeExpanded.length)}%)</span></div><div class="insights-stat-label">Doctor expanded regime</div></div>
+      <div class="insights-stat"><div class="insights-stat-num">${familyHist.length} <span style="font-size:13px;color:var(--ink-light)">(${pct(familyHist.length)}%)</span></div><div class="insights-stat-label">Positive family history</div></div>
+      <div class="insights-stat"><div class="insights-stat-num">${priorTreatment.length} <span style="font-size:13px;color:var(--ink-light)">(${pct(priorTreatment.length)}%)</span></div><div class="insights-stat-label">Not first attempt</div></div>
+    </div>
+
+    <!-- Strategic takeaways -->
+    <div class="guide-section">
+      <div class="guide-section-head">Strategic takeaways</div>
+      <div class="insight-takeaway"><strong>31% of M1 NR cohort never had their order delivered.</strong> 11% cancelled, 20% RTO. Headline protocol numbers and patterns below are computed across all 200 NR — see Reorderer Protocol modal for delivered-only apples-to-apples comparison vs reorderers.</div>
+      <div class="insight-takeaway"><strong>Regime expansion is NOT the problem.</strong> ${pct(regimeExpanded.length)}% of these non-reorderer calls had doctor add oral minoxidil/KT shampoo/booster — but population data (182k M1 users) shows MORE SKUs correlates with HIGHER reorder. Original "cap regime at 3 SKUs" hypothesis was wrong.</div>
+      <div class="insight-takeaway"><strong>All 3 scripts matter — biggest gaps now (delivered-only, strict-scored, n=255):</strong> shedding +18pp, tapering +17pp, Day-30 +17pp. Earlier "Day-30 collapsed to +4pp" was an artifact of including users whose orders never arrived (31% of NR cohort). With delivered-only, all three scripts show comparable gaps and reinforce each other.</div>
+      <div class="insight-takeaway"><strong>31% of M1 non-reorderers never had their order delivered.</strong> Of the original 200 NR cohort: 11% cancelled, 20% RTO. Cancellation reasons cluster around "ordered by mistake", "expert recommended more products" (cost shock), and "not convinced with treatment". Separate operational/cost issue from the consult-quality issue.</div>
+      <div class="insight-takeaway"><strong>Comprehension friction is far more common than first cohort suggested.</strong> 68% of new 100 non-reorderers had language switching, code-mix, partial-listening, or proxy-buyer friction (vs 15% in original 100 — same rubric, second-pass agents flag more aggressively). Language-match on recovery is structural, not optional.</div>
+      <div class="insight-takeaway"><strong>~55% of M1 non-reorderers are returning users from prior failed treatments.</strong> Combined with 28% of reorderers, well over half of all M1 users are not first-time minoxidil — they tried, stopped, came back. The shedding warning + taper protocol matters more for them, not less.</div>
+      <div class="insight-takeaway"><strong>Doctor off-script content is a QA red flag.</strong> Multiple cases of doctors going off-protocol mid-consult: a Gujarati movie promo, personal weight-loss tangents, weight management cross-sells. Surface per-doctor, not per-call.</div>
+    </div>
+
+    <!-- Recent move / city change -->
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Recent move / city change</div>
+        <div class="insight-block-pct">${recentMove.length} / ${total}  ·  ${pct(recentMove.length)}%</div>
+      </div>
+      ${recentMove.length === 0 ? '<div class="insight-block-empty">None.</div>' : renderRows(recentMove, u => {
+        const ctx = u.summary.specific_context
+        return `<strong>${ctx.city_or_location}</strong> — ${ctx.trigger}`
+      })}
+    </div>
+
+    <!-- Water -->
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Hard / problem water disclosed</div>
+        <div class="insight-block-pct">${waterIssue.length} / ${total}  ·  ${pct(waterIssue.length)}%</div>
+      </div>
+      ${waterIssue.length === 0 ? '<div class="insight-block-empty">None.</div>' : renderRows(waterIssue, u => u.summary.specific_context.water_source)}
+    </div>
+
+    <!-- Family history -->
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Positive family history</div>
+        <div class="insight-block-pct">${familyHist.length} / ${total}  ·  ${pct(familyHist.length)}%</div>
+      </div>
+      ${familyHist.length === 0 ? '<div class="insight-block-empty">None.</div>' : renderRows(familyHist, u => u.summary.specific_context.family_history)}
+    </div>
+
+    <!-- Prior treatment -->
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Prior treatment / not first attempt</div>
+        <div class="insight-block-pct">${priorTreatment.length} / ${total}  ·  ${pct(priorTreatment.length)}%</div>
+      </div>
+      ${priorTreatment.length === 0 ? '<div class="insight-block-empty">None.</div>' : renderRows(priorTreatment, u => u.summary.specific_context.prior_treatment)}
+    </div>
+
+    <!-- Regime expansion -->
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Doctor expanded regime (added SKUs)</div>
+        <div class="insight-block-pct">${regimeExpanded.length} / ${total}  ·  ${pct(regimeExpanded.length)}%</div>
+      </div>
+      ${renderRows(regimeExpanded, u => u.summary.specific_context.regime_expansion || u.summary.product_pushing_check?.notes || '-')}
+    </div>
+
+    <!-- Comprehension friction -->
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Comprehension / language friction</div>
+        <div class="insight-block-pct">${compFriction.length} / ${total}  ·  ${pct(compFriction.length)}%</div>
+      </div>
+      ${compFriction.length === 0 ? '<div class="insight-block-empty">None severe.</div>' : renderRows(compFriction, u => `(${u.consultation.language})  ${u.summary.specific_context.comprehension}`)}
+    </div>
+
+    <!-- Lifestyle factor distribution -->
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Lifestyle risk factors</div>
+        <div class="insight-block-pct">across all ${total} cards</div>
+      </div>
+      ${renderBars(lifestyleBuckets)}
+    </div>
+
+    <!-- Action distribution -->
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Recommended action mix</div>
+        <div class="insight-block-pct">${total} cards</div>
+      </div>
+      ${renderBars(actions)}
+    </div>
+
+    <!-- Tactic distribution -->
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Supporting tactic mix</div>
+        <div class="insight-block-pct">${total} cards</div>
+      </div>
+      ${renderBars(tactics)}
+    </div>
+  `
+
+  document.getElementById('insights-body').innerHTML = html
+}
+
+// ── Reorderer protocol modal ──
+function openReordererInsights() {
+  renderReordererInsights()
+  document.getElementById('reorder-overlay').classList.add('open')
+  document.getElementById('reorder-modal').classList.add('open')
+}
+function closeReordererInsights() {
+  document.getElementById('reorder-overlay').classList.remove('open')
+  document.getElementById('reorder-modal').classList.remove('open')
+}
+
+function renderReordererInsights() {
+  // DELIVERED-ONLY apples-to-apples (canonical view).
+  // Cancelled and RTO orders excluded — they never reached the patient, so consult quality
+  // can't be evaluated against reorder behavior on a regime that didn't exist.
+  // Toggle this to false if you want to see the unfiltered numbers.
+  const DELIVERED_ONLY = true
+  const isDelivered = (u) => u.order_meta?.order_status === 'confirmed_order'
+
+  const reorderersAll = USERS.filter(u => u.m_cohort === 'M1_reorder')
+  const reorderers = DELIVERED_ONLY ? reorderersAll.filter(isDelivered) : reorderersAll
+  const total = reorderers.length
+
+  const usableR = reorderers.filter(u => u.summary?.protocol_compliance?.all_three !== null && u.summary?.protocol_compliance?.all_three !== undefined)
+  const nrAllStrict = USERS.filter(u => u.m_cohort === 'M1' && u.summary?.protocol_compliance?.all_three !== null && u.summary?.protocol_compliance?.all_three !== undefined)
+  const nrAll = DELIVERED_ONLY ? nrAllStrict.filter(isDelivered) : nrAllStrict
+  const nrPct = (key) => nrAll.length ? Math.round(100 * nrAll.filter(u => u.summary.protocol_compliance[key] === true).length / nrAll.length) : 0
+  const DEEP_READ_TRUTH = {
+    delivered_only: DELIVERED_ONLY,
+    usable: usableR.length,
+    total_reorder_card_count: reorderersAll.length,
+    delivered_reorder_count: reorderersAll.filter(isDelivered).length,
+    nr_total_count: USERS.filter(u => u.m_cohort === 'M1').length,
+    nr_delivered_count: USERS.filter(u => u.m_cohort === 'M1' && isDelivered(u)).length,
+    shedding_yes: reorderers.filter(u => u.summary?.protocol_compliance?.shedding_warning === true).length,
+    taper_yes:    reorderers.filter(u => u.summary?.protocol_compliance?.tapering_protocol === true).length,
+    day30_yes:    reorderers.filter(u => u.summary?.protocol_compliance?.day30_followup === true).length,
+    all3_yes:     reorderers.filter(u => u.summary?.protocol_compliance?.all_three === true).length,
+    broken:       reorderers.filter(u => u.summary?.protocol_compliance?.all_three === null).length,
+    nr_usable: nrAll.length,
+    nonreorder_shedding_pct: nrPct('shedding_warning'),
+    nonreorder_taper_pct:    nrPct('tapering_protocol'),
+    nonreorder_day30_pct:    nrPct('day30_followup'),
+    nonreorder_all3_pct:     nrPct('all_three'),
+  }
+
+  // Heuristic / per-card scoring from users.js (transparent for reviewer)
+  const proto = reorderers.map(u => u.summary?.protocol_compliance || {})
+  const cardCount = (key) => proto.filter(p => p[key] === true).length
+  const all3Card = proto.filter(p => p.all_three === true).length
+  const heurDeepCount = reorderers.filter(u => (u.flags || []).includes('deep_read')).length
+  const heurAutoCount = total - heurDeepCount
+
+  const pctOf = (n, d) => d ? Math.round(n / d * 100) : 0
+  const dr = DEEP_READ_TRUTH
+
+  const renderRow = (u) => {
+    const p = u.summary?.protocol_compliance || {}
+    const tick = (v) => v === true ? '<span style="color:#166534;font-weight:700">✓</span>' :
+                       v === false ? '<span style="color:#991b1b;font-weight:700">✗</span>' :
+                       '<span style="color:var(--ink-light)">—</span>'
+    const stage = u.hair_stage ? `Stage ${u.hair_stage}` : 'Indiv'
+    const dtn = u.reorder_signal?.days_to_next_order
+    const lang = u.consultation?.language || '?'
+    const isDeep = (u.flags || []).includes('deep_read')
+    const method = isDeep ? '<span style="font-size:9px;color:#166534;background:#dcfce7;padding:1px 5px;border-radius:3px;margin-left:5px;">deep</span>'
+                          : '<span style="font-size:9px;color:#92400e;background:#fef3c7;padding:1px 5px;border-radius:3px;margin-left:5px;">auto</span>'
+    return `<div class="insight-row" style="grid-template-columns: 90px 70px 50px 50px 60px 60px 60px 1fr;">
+      <span class="insight-cid" onclick="jumpToCard('${u.consult_id}')">${u.consult_id}</span>
+      <span style="font-size:11px;color:var(--ink-mid);">${stage}</span>
+      <span style="font-size:11px;color:var(--ink-mid);">${lang}</span>
+      <span style="font-size:11px;color:var(--ink-light);">d${dtn}</span>
+      <span style="text-align:center">${tick(p.shedding_warning)}</span>
+      <span style="text-align:center">${tick(p.tapering_protocol)}</span>
+      <span style="text-align:center">${tick(p.day30_followup)}</span>
+      <span style="font-size:10.5px;color:var(--ink-light);">${method}${p.note ? ' ' + escapeHtml(p.note) : ''}</span>
+    </div>`
+  }
+
+  // Stratification
+  const byStage = {}
+  reorderers.forEach(u => {
+    const s = u.hair_stage || 'indiv'
+    byStage[s] = byStage[s] || []
+    byStage[s].push(u)
+  })
+
+  const stageRows = Object.entries(byStage).sort().map(([stage, users]) => {
+    const sCount = users.filter(u => u.summary?.protocol_compliance?.shedding_warning === true).length
+    const tCount = users.filter(u => u.summary?.protocol_compliance?.tapering_protocol === true).length
+    const dCount = users.filter(u => u.summary?.protocol_compliance?.day30_followup === true).length
+    return `<div class="insight-bar-row">
+      <span class="insight-bar-label">${stage === 'indiv' ? 'Individual SKU' : 'Stage ' + stage}</span>
+      <span style="font-size:11px;color:var(--ink-mid);min-width:280px;">
+        Shedding ${sCount}/${users.length} ·
+        Taper ${tCount}/${users.length} ·
+        Day-30 ${dCount}/${users.length}
+      </span>
+      <span class="insight-bar-num">${users.length}</span>
+    </div>`
+  }).join('')
+
+  const html = `
+    <!-- Headline -->
+    <div class="insights-headline">
+      <div class="insights-stat">
+        <div class="insights-stat-num">${total}</div>
+        <div class="insights-stat-label">Reorderer calls<br><span style="color:var(--ink-light);font-weight:400">delivered + strict ${dr.delivered_reorder_count}/${dr.total_reorder_card_count}${dr.broken ? ' · ' + dr.broken + ' broken' : ''}</span></div>
+      </div>
+      <div class="insights-stat">
+        <div class="insights-stat-num" style="color:#166534;">${dr.shedding_yes}/${dr.usable} <span style="font-size:13px;color:var(--ink-light)">(${pctOf(dr.shedding_yes, dr.usable)}%)</span></div>
+        <div class="insights-stat-label">Shedding warning<br><span style="color:var(--ink-light);font-weight:400">vs ~${dr.nonreorder_shedding_pct}% non-reorderer</span></div>
+      </div>
+      <div class="insights-stat">
+        <div class="insights-stat-num" style="color:#166534;">${dr.taper_yes}/${dr.usable} <span style="font-size:13px;color:var(--ink-light)">(${pctOf(dr.taper_yes, dr.usable)}%)</span></div>
+        <div class="insights-stat-label">Tapering protocol<br><span style="color:var(--ink-light);font-weight:400">vs ~${dr.nonreorder_taper_pct}% non-reorderer</span></div>
+      </div>
+      <div class="insights-stat">
+        <div class="insights-stat-num" style="color:#166534;">${dr.day30_yes}/${dr.usable} <span style="font-size:13px;color:var(--ink-light)">(${pctOf(dr.day30_yes, dr.usable)}%)</span></div>
+        <div class="insights-stat-label">Day-30 follow-up<br><span style="color:var(--ink-light);font-weight:400">vs ${dr.nonreorder_day30_pct}% non-reorderer (strict)</span></div>
+      </div>
+    </div>
+
+    <!-- Big takeaway -->
+    <div class="guide-section">
+      <div class="guide-section-head">Headline</div>
+      <div class="insight-takeaway"><strong>The 3-script protocol is the differentiator (strict-scored, apples-to-apples).</strong>  ${dr.all3_yes}/${dr.usable} reorderer calls (${pctOf(dr.all3_yes, dr.usable)}%) had all three scripts delivered together. Non-reorderers: shedding ${dr.nonreorder_shedding_pct}%, tapering ${dr.nonreorder_taper_pct}%, Day-30 ${dr.nonreorder_day30_pct}% (n=94 strict-rescored).</div>
+      <div class="insight-takeaway"><strong>Shedding warning is now the largest absolute gap (+${pctOf(dr.shedding_yes, dr.usable) - dr.nonreorder_shedding_pct}pp), not Day-30.</strong>  Earlier loose-scored claim of "0 of 100 had Day-30" was the artifact of a different rubric. Under consistent strict scoring, shedding warning differentiates more cleanly than Day-30.</div>
+      <div class="insight-takeaway"><strong>Tapering is the weakest script.</strong>  Most doctors say a vague "we'll gradually stop" without an actual schedule. Only ~40% of doctors (either cohort) give a concrete 2x → 1x → alternate-days plan. Easiest to script and audit.</div>
+      <div class="insight-takeaway"><strong>Returning users are 28% of reorderers.</strong>  ~14 of 50 had prior minoxidil experience and came back; the protocol works partly because they recognize it and trust it.</div>
+      <div class="insight-takeaway"><strong>Pitch reframe.</strong>  The original "M1 attrition is a regime-expansion problem" is wrong (population data shows MORE SKUs correlates with HIGHER reorder).  The corrected pitch is <em>"M1 attrition is a doctor-script-discipline problem."</em>  Fix is doctor training + AssemblyAI-based weekly QA, not product.</div>
+    </div>
+
+    <!-- Comparison table -->
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Reorderer vs non-reorderer (deep-read)</div>
+        <div class="insight-block-pct">3-script compliance</div>
+      </div>
+      <div style="display:grid;grid-template-columns: 200px 130px 130px 80px;gap:8px;font-size:12px;font-weight:600;color:var(--ink-light);padding:8px 14px;border-bottom:1px solid var(--line);">
+        <span>Behavior</span>
+        <span>Reorderers (50)</span>
+        <span>Non-reorderers (100)</span>
+        <span>Gap</span>
+      </div>
+      <div style="display:grid;grid-template-columns: 200px 130px 130px 80px;gap:8px;font-size:12.5px;padding:10px 14px;border-bottom:1px solid var(--line);">
+        <span><strong>Shedding warning</strong></span>
+        <span style="color:#166534;font-weight:600">${dr.shedding_yes}/${dr.usable} = ${pctOf(dr.shedding_yes, dr.usable)}%</span>
+        <span>~${dr.nonreorder_shedding_pct}%</span>
+        <span style="color:#166534;font-weight:700">+${pctOf(dr.shedding_yes, dr.usable) - dr.nonreorder_shedding_pct}pp</span>
+      </div>
+      <div style="display:grid;grid-template-columns: 200px 130px 130px 80px;gap:8px;font-size:12.5px;padding:10px 14px;border-bottom:1px solid var(--line);">
+        <span><strong>Tapering protocol</strong></span>
+        <span style="color:#166534;font-weight:600">${dr.taper_yes}/${dr.usable} = ${pctOf(dr.taper_yes, dr.usable)}%</span>
+        <span>~${dr.nonreorder_taper_pct}%</span>
+        <span style="color:#166534;font-weight:700">+${pctOf(dr.taper_yes, dr.usable) - dr.nonreorder_taper_pct}pp</span>
+      </div>
+      <div style="display:grid;grid-template-columns: 200px 130px 130px 80px;gap:8px;font-size:12.5px;padding:10px 14px;border-bottom:1px solid var(--line);">
+        <span><strong>Day-30 follow-up</strong></span>
+        <span style="color:#166534;font-weight:600">${dr.day30_yes}/${dr.usable} = ${pctOf(dr.day30_yes, dr.usable)}%</span>
+        <span>~${dr.nonreorder_day30_pct}%</span>
+        <span style="color:#166534;font-weight:700">+${pctOf(dr.day30_yes, dr.usable) - dr.nonreorder_day30_pct}pp</span>
+      </div>
+      <div style="display:grid;grid-template-columns: 200px 130px 130px 80px;gap:8px;font-size:12.5px;padding:10px 14px;background:#f9fafb;">
+        <span><strong>All 3 together</strong></span>
+        <span style="color:#166534;font-weight:700">${dr.all3_yes}/${dr.usable} = ${pctOf(dr.all3_yes, dr.usable)}%</span>
+        <span>${dr.nonreorder_all3_pct}%</span>
+        <span style="color:#166534;font-weight:700">+${pctOf(dr.all3_yes, dr.usable) - dr.nonreorder_all3_pct}pp</span>
+      </div>
+    </div>
+
+    <!-- Per-card scoring -->
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Per-card protocol scoring</div>
+        <div class="insight-block-pct">${total} reorderer cards</div>
+      </div>
+      <div style="font-size:11px;color:var(--ink-light);padding:0 14px 8px 14px;">
+        All ${total} cards deep-read against a strict rubric (5 parallel passes, 2026-05-04). ${dr.broken} broken transcripts are shown but not scored. Per-card counts: shedding ${cardCount('shedding_warning')}/${total} · taper ${cardCount('tapering_protocol')}/${total} · day30 ${cardCount('day30_followup')}/${total} · all-3 ${all3Card}/${total}.
+      </div>
+      <div style="display:grid;grid-template-columns: 90px 70px 50px 50px 60px 60px 60px 1fr;gap:8px;font-size:11px;font-weight:700;color:var(--ink-light);padding:6px 14px;border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.04em;">
+        <span>Consult</span>
+        <span>Stage</span>
+        <span>Lang</span>
+        <span>Reorder</span>
+        <span style="text-align:center">Shed</span>
+        <span style="text-align:center">Taper</span>
+        <span style="text-align:center">Day30</span>
+        <span>Method / note</span>
+      </div>
+      ${reorderers.sort((a,b) => {
+        const ap = a.summary?.protocol_compliance || {}
+        const bp = b.summary?.protocol_compliance || {}
+        const aDeep = (a.flags || []).includes('deep_read') ? 0 : 1
+        const bDeep = (b.flags || []).includes('deep_read') ? 0 : 1
+        if (aDeep !== bDeep) return aDeep - bDeep
+        return (a.hair_stage || 99) - (b.hair_stage || 99)
+      }).map(renderRow).join('')}
+    </div>
+
+    <!-- Per-stage breakdown -->
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Compliance by stage</div>
+        <div class="insight-block-pct">${total} cards</div>
+      </div>
+      ${stageRows}
+    </div>
+
+    <!-- A/B test design -->
+    <div class="guide-section">
+      <div class="guide-section-head">Recommended A/B test design</div>
+      <div class="insight-takeaway"><strong>Treatment</strong>: 5–10 doctors trained on the 3-script protocol; QA review every Friday on the prior week's calls (sample 50 calls/week, grade against the 3 behaviors).</div>
+      <div class="insight-takeaway"><strong>Control</strong>: comparable doctor group, no training change.</div>
+      <div class="insight-takeaway"><strong>Duration</strong>: 6 weeks (one full reorder cycle).</div>
+      <div class="insight-takeaway"><strong>Primary metric</strong>: M1→M2 reorder rate at Day 30+ post-consult. Baseline 31% (90+ day observation cohort). Target +4–5pp lift = 35–36%.</div>
+      <div class="insight-takeaway"><strong>Power</strong>: ~500 M1 consults per doctor per week × 6 weeks = 15–30k observations per cohort, more than enough to detect a 4pp lift.</div>
+    </div>
+  `
+  document.getElementById('reorder-body').innerHTML = html
+}
+
+// ── Main-view tab switching ──
+let _mainTab = 'users'
+function switchMainTab(tab) {
+  _mainTab = tab
+  document.querySelectorAll('.main-tab').forEach(b => b.classList.toggle('active', b.dataset.mtab === tab))
+  document.getElementById('pane-users').style.display = tab === 'users' ? '' : 'none'
+  document.getElementById('pane-protocol').style.display = tab === 'protocol' ? '' : 'none'
+  document.getElementById('pane-quality').style.display = tab === 'quality' ? '' : 'none'
+  document.getElementById('users-bar').style.display = tab === 'users' ? '' : 'none'
+  if (tab === 'quality') {
+    document.getElementById('topbar-title').textContent = 'Quality dashboard'
+    document.getElementById('topbar-sub').textContent = 'Distribution of consult quality scores across cohorts'
+    renderQualityDashboard()
+  } else if (tab === 'protocol') {
+    document.getElementById('topbar-title').textContent = 'Protocol compliance'
+    document.getElementById('topbar-sub').textContent = 'Weekly tracking metric: shedding warning + tapering protocol + Day-30 follow-up'
+    renderProtocolDashboard()
+  } else {
+    document.getElementById('topbar-title').textContent = 'At-risk users'
+    document.getElementById('topbar-sub').textContent = 'Repeat customers overdue for reorder; sorted by days overdue'
+    updateCounts()
+  }
+}
+
+// ── Protocol compliance dashboard ──
+const PC_BASELINE_KEY = 'protocol_baseline_v1'
+
+function saveProtocolBaseline() {
+  const snapshot = computeProtocolSnapshot()
+  snapshot.saved_at = new Date().toISOString()
+  localStorage.setItem(PC_BASELINE_KEY, JSON.stringify(snapshot))
+  alert('Baseline saved. Next week, click "Compare to baseline" to see deltas.')
+  renderProtocolDashboard()
+}
+function clearProtocolBaseline() {
+  if (!confirm('Clear saved baseline? You will lose the saved snapshot.')) return
+  localStorage.removeItem(PC_BASELINE_KEY)
+  renderProtocolDashboard()
+}
+function loadProtocolBaseline() {
+  try {
+    const raw = localStorage.getItem(PC_BASELINE_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch(e) { return null }
+}
+
+function computeProtocolSnapshot() {
+  // PRIMARY: M1_baseline cohort = clean random sample of delivered M1 first-consult-first-order calls.
+  // This is the canonical week-over-week tracking metric — no stratification, no weighting.
+  // For the cohort gap (NR vs R), we use the STRATIFIED M1+M1_reorder cohort which has
+  // statistical power for the comparison (50/50 split, n=255). The random sample's R count
+  // is too small to yield a meaningful gap.
+  const isDelivered = (u) => u.order_meta?.order_status === 'confirmed_order'
+  const usable = (u) => u.summary?.protocol_compliance?.all_three != null
+  const baseline = USERS.filter(u => u.m_cohort === 'M1_baseline' && usable(u))
+  const stratNR  = USERS.filter(u => u.m_cohort === 'M1' && usable(u) && isDelivered(u))
+  const stratR   = USERS.filter(u => u.m_cohort === 'M1_reorder' && usable(u) && isDelivered(u))
+  const pc = (u, k) => u.summary.protocol_compliance[k] === true
+  const stat = (arr, k) => arr.length ? Math.round(100 * arr.filter(u => pc(u, k)).length / arr.length) : 0
+  return {
+    pop: { n: baseline.length,
+           shedding: stat(baseline, 'shedding_warning'),
+           taper:    stat(baseline, 'tapering_protocol'),
+           day30:    stat(baseline, 'day30_followup'),
+           all3:     stat(baseline, 'all_three') },
+    nr:  { n: stratNR.length,
+           shedding: stat(stratNR, 'shedding_warning'),
+           taper:    stat(stratNR, 'tapering_protocol'),
+           day30:    stat(stratNR, 'day30_followup'),
+           all3:     stat(stratNR, 'all_three') },
+    r:   { n: stratR.length,
+           shedding: stat(stratR, 'shedding_warning'),
+           taper:    stat(stratR, 'tapering_protocol'),
+           day30:    stat(stratR, 'day30_followup'),
+           all3:     stat(stratR, 'all_three') },
+  }
+}
+
+function renderProtocolDashboard() {
+  const isDelivered = (u) => u.order_meta?.order_status === 'confirmed_order'
+  const usable = (u) => u.summary?.protocol_compliance?.all_three != null
+  const baseline = loadProtocolBaseline()
+  const snap = computeProtocolSnapshot()
+
+  const renderHeroCard = (key, label, sub) => {
+    const cur = snap.pop[key]
+    const base = baseline?.pop?.[key]
+    let delta = ''
+    if (base !== undefined) {
+      const d = cur - base
+      const cls = d > 0 ? 'up' : d < 0 ? 'down' : 'flat'
+      const arrow = d > 0 ? '↑' : d < 0 ? '↓' : '='
+      delta = `<span class="delta ${cls}">${arrow} ${d > 0 ? '+' : ''}${d}pp</span>`
+    }
+    const baselineLine = base !== undefined
+      ? `vs baseline ${base}% (saved ${baseline.saved_at?.slice(0,10) || '?'})`
+      : `<em>no baseline saved yet</em>`
+
+    const gap = snap.r[key] - snap.nr[key]
+    return `<div class="pc-hero-card">
+      <div class="pc-hero-title">${label}</div>
+      <div class="pc-hero-bignum">${cur}%${delta}</div>
+      <div class="pc-hero-baseline">${baselineLine}</div>
+      <div class="pc-hero-cohort-split">
+        <div>
+          <div class="label">Non-reorderer</div>
+          <div class="num">${snap.nr[key]}%</div>
+        </div>
+        <div>
+          <div class="label">Reorderer</div>
+          <div class="num" style="color:#166534;">${snap.r[key]}%</div>
+        </div>
+        <div class="gap">
+          <div class="label">Gap</div>
+          <div class="gap-num">+${gap}pp</div>
+        </div>
+      </div>
+    </div>`
+  }
+
+  // Per-doctor breakdown
+  const docMap = {}
+  for (const u of USERS) {
+    if (!['M1','M1_reorder'].includes(u.m_cohort)) continue
+    if (!isDelivered(u)) continue
+    if (!usable(u)) continue
+    const did = u.order_meta?.doctor_id
+    if (!did) continue
+    if (!docMap[did]) docMap[did] = {
+      id: did, name: u.order_meta?.doctor_name || did,
+      consults: [], reordered: 0,
+    }
+    docMap[did].consults.push(u)
+    if (u.m_cohort === 'M1_reorder') docMap[did].reordered++
+  }
+  const doctors = Object.values(docMap).filter(d => d.consults.length >= 3)
+    .map(d => {
+      const n = d.consults.length
+      const pc = (k) => Math.round(100 * d.consults.filter(u => u.summary.protocol_compliance[k] === true).length / n)
+      return {
+        ...d, n,
+        shedding: pc('shedding_warning'),
+        taper:    pc('tapering_protocol'),
+        day30:    pc('day30_followup'),
+        all3:     pc('all_three'),
+        reorder:  Math.round(100 * d.reordered / n),
+      }
+    })
+
+  // Default sort: by all3 desc
+  if (!_pcSort) _pcSort = { col: 'all3', dir: 'desc' }
+  doctors.sort((a, b) => {
+    const x = a[_pcSort.col]; const y = b[_pcSort.col]
+    if (typeof x === 'string' || typeof y === 'string') {
+      const cmp = String(x || '').localeCompare(String(y || ''))
+      return _pcSort.dir === 'desc' ? -cmp : cmp
+    }
+    return _pcSort.dir === 'desc' ? (y - x) : (x - y)
+  })
+
+  const cellPct = (n, mode) => {
+    const cls = n >= 60 ? 'high' : n >= 30 ? 'med' : 'low'
+    return `<div class="pc-pct-cell">
+      <div class="pc-pct-bar"><div class="pc-pct-bar-fill ${mode || cls}" style="width:${n}%"></div></div>
+      <span style="min-width: 36px; text-align: right;">${n}%</span>
+    </div>`
+  }
+
+  const baselineBar = baseline
+    ? `<div class="pc-baseline-bar has-baseline">
+        ✓ Baseline saved on <strong>${baseline.saved_at?.slice(0,10)}</strong> · all-3: ${baseline.pop?.all3 ?? '—'}%, shedding: ${baseline.pop?.shedding ?? '—'}%, taper: ${baseline.pop?.taper ?? '—'}%, day30: ${baseline.pop?.day30 ?? '—'}%
+        <div class="pc-baseline-actions">
+          <button class="pc-baseline-btn" onclick="saveProtocolBaseline()">Update baseline to current</button>
+          <button class="pc-baseline-btn" onclick="clearProtocolBaseline()">Clear</button>
+        </div>
+      </div>`
+    : `<div class="pc-baseline-bar">
+        💡 No baseline saved yet. Save the current population-weighted numbers as the baseline, then come back next week to see the delta.
+        <div class="pc-baseline-actions">
+          <button class="pc-baseline-btn" onclick="saveProtocolBaseline()">Save current as baseline</button>
+        </div>
+      </div>`
+
+  const html = `
+    <div class="pc-section">
+      <div class="pc-section-title">Protocol compliance — weekly tracking</div>
+      <div class="pc-section-sub">3 binary scripts in every M1 consult: shedding warning + tapering protocol + Day-30 follow-up. Headline numbers are computed off the <strong>clean random baseline (n=${snap.pop.n})</strong> — random sample of delivered M1 first-consult-first-order calls, strict-scored against the same rubric. Save the baseline this week, then re-pull next week and compare.</div>
+
+      ${baselineBar}
+
+      <div class="pc-hero-row">
+        ${renderHeroCard('shedding', 'Shedding warning', '"first 2-8 weeks shedding is normal, do not stop"')}
+        ${renderHeroCard('taper',    'Tapering protocol', '"never stop suddenly; reduce 2x→1x→3x/wk"')}
+        ${renderHeroCard('day30',    'Day-30 follow-up', '"book a follow-up consult in 1 month"')}
+        ${renderHeroCard('all3',     'All 3 together', 'all three scripts in the same consult')}
+      </div>
+    </div>
+
+    <div class="pc-section">
+      <div class="pc-section-title">Why this matters — link to reorder rate</div>
+      <div class="pc-section-sub">When a doctor delivers all 3 scripts, the user reorders ~2x more often (23% vs 9% in our delivered sample). Increasing all-3 compliance from ${snap.pop.all3}% to a target of 50%+ should lift M1→M2 reorder rate. The chain is: <strong>this week's protocol % → next week's protocol % → reorder rate next month</strong>.</div>
+
+      <div style="display:flex;gap:24px;align-items:flex-start;font-size:12px;color:var(--ink-mid);line-height:1.6;">
+        <div style="flex:1;">
+          <strong style="color:var(--navy);">Cohort comparison (delivered only)</strong><br>
+          <span style="color:var(--ink-light);">Reorderer (n=${snap.r.n}) vs Non-reorderer (n=${snap.nr.n}):</span>
+          <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+            <li>Shedding: ${snap.r.shedding}% R vs ${snap.nr.shedding}% NR <strong style="color:#166534;">(+${snap.r.shedding - snap.nr.shedding}pp)</strong></li>
+            <li>Tapering: ${snap.r.taper}% R vs ${snap.nr.taper}% NR <strong style="color:#166534;">(+${snap.r.taper - snap.nr.taper}pp)</strong></li>
+            <li>Day-30: ${snap.r.day30}% R vs ${snap.nr.day30}% NR <strong style="color:#166534;">(+${snap.r.day30 - snap.nr.day30}pp)</strong></li>
+            <li>All 3: ${snap.r.all3}% R vs ${snap.nr.all3}% NR <strong style="color:#166534;">(+${snap.r.all3 - snap.nr.all3}pp)</strong></li>
+          </ul>
+        </div>
+        <div style="flex:1;">
+          <strong style="color:var(--navy);">Weekly review playbook</strong>
+          <ol style="margin: 8px 0 0 0; padding-left: 20px;">
+            <li>This Monday — save baseline (button above).</li>
+            <li>Share the 4 hero numbers with telehealth team. Communicate the 3 scripts.</li>
+            <li>Next Monday — re-pull this week's M1 transcripts, recompute. Deltas show vs baseline.</li>
+            <li>If protocol % went up, check the M1 → M2 reorder rate next month. The chain validates the analysis.</li>
+            <li>Iterate weekly — incremental gains compound.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <div class="pc-section">
+      <div class="pc-section-title">Per-doctor scorecard (≥3 consults in sample)</div>
+      <div class="pc-section-sub">Doctors sorted by all-3 compliance. Click a column header to re-sort. <strong>${doctors.length}</strong> doctors meet the threshold; ${Object.keys(docMap).length - doctors.length} have fewer than 3 sampled consults and are excluded for noise. Use this to identify who to coach first (low all-3 + low reorder) and who to use as exemplars (high all-3 + high reorder).</div>
+      <table class="pc-table">
+        <thead>
+          <tr>
+            <th onclick="setPCSort('name')">Doctor</th>
+            <th class="right" onclick="setPCSort('n')">Sample n</th>
+            <th class="right" onclick="setPCSort('shedding')">Shedding</th>
+            <th class="right" onclick="setPCSort('taper')">Taper</th>
+            <th class="right" onclick="setPCSort('day30')">Day-30</th>
+            <th class="right" onclick="setPCSort('all3')">All 3</th>
+            <th class="right" onclick="setPCSort('reorder')">Reorder rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${doctors.map(d => `<tr>
+            <td>
+              <div class="doctor-name">${escapeHtml(d.name)}</div>
+              <div class="small-note">id ${d.id}</div>
+            </td>
+            <td class="right">${d.n}</td>
+            <td class="right">${cellPct(d.shedding)}</td>
+            <td class="right">${cellPct(d.taper)}</td>
+            <td class="right">${cellPct(d.day30)}</td>
+            <td class="right" style="font-weight:700;">${cellPct(d.all3)}</td>
+            <td class="right" style="color:${d.reorder >= 50 ? '#166534' : d.reorder >= 25 ? '#d97706' : '#dc2626'};font-weight:700;">${d.reorder}%</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pc-section">
+      <div class="pc-section-title">📋 The protocol — what to share with doctors</div>
+      <div class="pc-section-sub">Reference card for the telehealth team. Print, share in onboarding/refresher training, embed in the consult app's doctor view.</div>
+
+      <div style="display:grid;grid-template-columns: 1fr 1fr 1fr;gap:16px;">
+
+        <div style="border:1px solid var(--line);border-radius:8px;padding:18px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:#dc2626;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Script 1 of 3</div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;color:var(--navy);margin-bottom:10px;">Shedding warning</div>
+          <div style="font-size:12.5px;color:var(--ink-mid);line-height:1.55;">
+            <strong>EN:</strong> "In the first 2–8 weeks, you may notice your hair fall <em>increase</em>. This is normal — old hair making way for new. Do <em>not</em> stop the medication."<br><br>
+            <strong>HI:</strong> "शुरू के 2–8 हफ्ते में आपके बाल और ज़्यादा झड़ सकते हैं। यह नार्मल है — पुराने बाल हटकर नए आते हैं। दवा बंद मत करना।"<br><br>
+            <em style="color:var(--ink-light);font-size:11px;">Why it matters: this is the #1 reason users panic-quit at week 4–6. Setting expectation upfront prevents the dropout.</em>
+          </div>
+        </div>
+
+        <div style="border:1px solid var(--line);border-radius:8px;padding:18px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:#d97706;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Script 2 of 3</div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;color:var(--navy);margin-bottom:10px;">Tapering protocol</div>
+          <div style="font-size:12.5px;color:var(--ink-mid);line-height:1.55;">
+            <strong>EN:</strong> "Never stop minoxidil suddenly. When you do stop, taper: 2x daily → 1x daily → alternate days → once a week → stop. Each step takes about 2 weeks."<br><br>
+            <strong>HI:</strong> "मिनोक्सिडिल कभी एकदम बंद मत करना। बंद करना है तो धीरे: रोज़ 2 बार → 1 बार → एक दिन छोड़ कर → हफ्ते में 1 बार → बंद। हर step में ~2 हफ्ते।"<br><br>
+            <em style="color:var(--ink-light);font-size:11px;">Why it matters: abrupt stop = rebound shedding. Most "I tried before, didn't work" stories trace back to no taper.</em>
+          </div>
+        </div>
+
+        <div style="border:1px solid var(--line);border-radius:8px;padding:18px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:#166534;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Script 3 of 3</div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;color:var(--navy);margin-bottom:10px;">Day-30 follow-up</div>
+          <div style="font-size:12.5px;color:var(--ink-mid);line-height:1.55;">
+            <strong>EN:</strong> "Let me schedule your follow-up for [exact date 30 days from now]. We'll review progress and adjust the regime."<br><br>
+            <strong>HI:</strong> "मैं आपका follow-up [exact date 30 दिन बाद] के लिए book कर रहा/रही हूँ। तब हम progress देखेंगे और regime adjust करेंगे।"<br><br>
+            <em style="color:var(--ink-light);font-size:11px;">Why it matters: "use the coach feature when you have questions" doesn't count. Push the booking yourself — opt-in pull doesn't work.</em>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="pc-section">
+      <div class="pc-section-title">⭐ Best practices — beyond the 3 scripts</div>
+      <div class="pc-section-sub">From comparing reorderer vs non-reorderer consults: what doctors with high retention also do.</div>
+
+      <div style="display:grid;grid-template-columns: 1fr 1fr;gap:14px;">
+
+        <div style="border:1px solid var(--line);border-radius:6px;padding:14px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:var(--navy);margin-bottom:6px;">Empathy first, clinical second</div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.5;">Acknowledge the user's emotional state ("I understand it's frustrating, especially at your age"). Reorderer doctors score 0.5+ higher on empathy than non-reorderer doctors.</div>
+        </div>
+
+        <div style="border:1px solid var(--line);border-radius:6px;padding:14px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:var(--navy);margin-bottom:6px;">Strong closure — repeat the plan</div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.5;">End every call with: "So to summarise — minoxidil twice daily, tablet once after breakfast, follow-up on [date]. Anything unclear?" Closure quality is the strongest single predictor of reorder.</div>
+        </div>
+
+        <div style="border:1px solid var(--line);border-radius:6px;padding:14px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:var(--navy);margin-bottom:6px;">Personalise to their context</div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.5;">Connect their lifestyle to the diagnosis: hard water, recent move, sleep pattern, stress, family history. "You mentioned you moved to Bangalore — the hard water there is a factor." Generic advice gets ignored.</div>
+        </div>
+
+        <div style="border:1px solid var(--line);border-radius:6px;padding:14px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:var(--navy);margin-bottom:6px;">Active listening — respond to what they said</div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.5;">If the user mentions a prior treatment that didn't work, address it directly ("That probably stopped working because…"). Don't ignore and continue with the script.</div>
+        </div>
+
+        <div style="border:1px solid var(--line);border-radius:6px;padding:14px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:var(--navy);margin-bottom:6px;">No product pushing — accept declines gracefully</div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.5;">If user says no to oral minoxidil/derma roller/extras, don't keep pushing. Reorderer doctors offer once, accept the answer, move on. Pushers lose the user before the regime even starts.</div>
+        </div>
+
+        <div style="border:1px solid var(--line);border-radius:6px;padding:14px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:var(--navy);margin-bottom:6px;">Address cost concerns honestly</div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.5;">When user asks about price, don't deflect. Explain what each product does and which are non-negotiable vs optional. "Cost / recommended more products" is a top cancellation reason.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pc-section">
+      <div class="pc-section-title">🎯 Cohort-specific notes</div>
+      <div class="pc-section-sub">Sub-populations that need different framing — the protocol is universal but the surrounding conversation differs.</div>
+
+      <div style="display:grid;grid-template-columns: 1fr 1fr;gap:14px;">
+
+        <div style="border-left:3px solid #166534;padding:10px 14px;background:#f0fdf4;border-radius:4px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:#166534;margin-bottom:4px;">Returning users (~50% of M1)</div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.5;">Acknowledge their prior attempt: "You tried minoxidil before — what happened?" If they stopped abruptly, that explains the rebound. Frame this regime as a fresh start <em>with</em> the taper/follow-up they didn't get last time.</div>
+        </div>
+
+        <div style="border-left:3px solid #1e40af;padding:10px 14px;background:#eff6ff;border-radius:4px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:#1e40af;margin-bottom:4px;">Hard-water cities (Chennai, Bangalore, Jaipur, Lucknow, Chandigarh, Hyderabad)</div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.5;">Recommend RO-water rinse for the scalp ("ek mug RO water sir pe last rinse"). Mention water hardness as a contributing factor — users feel heard, not lectured.</div>
+        </div>
+
+        <div style="border-left:3px solid #92400e;padding:10px 14px;background:#fef3c7;border-radius:4px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:#92400e;margin-bottom:4px;">Stage 4+ users</div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.5;">Set expectations honestly: "We can stabilise and recover ~70-80% density, not full restoration. Beyond Stage 5, transplant is the only option — let's get you to Stage 4 stable first." Avoid over-promising — user will quit when results plateau.</div>
+        </div>
+
+        <div style="border-left:3px solid #7c3aed;padding:10px 14px;background:#f5f3ff;border-radius:4px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:#7c3aed;margin-bottom:4px;">Marriage-anxiety users (often 22–28 unmarried)</div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.5;">Don't dismiss the marriage concern as silly — it's a real motivator. Use timeline framing: "If we start now, you'll see visible regrowth in 4–6 months." This drives compliance more than clinical urgency.</div>
+        </div>
+
+        <div style="border-left:3px solid #be123c;padding:10px 14px;background:#fef2f2;border-radius:4px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:#be123c;margin-bottom:4px;">Side-effect-anxious users (especially Googled finasteride)</div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.5;">If user voices concern about sexual side effects with finasteride, don't gloss over. Either offer the topical-only regime (no oral) or explain the actual incidence rate (~2-3%) honestly. Brushing it off → no reorder.</div>
+        </div>
+
+        <div style="border-left:3px solid #475569;padding:10px 14px;background:#f1f5f9;border-radius:4px;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:700;color:#475569;margin-bottom:4px;">Beard-only users</div>
+          <div style="font-size:12px;color:var(--ink-mid);line-height:1.5;">Different protocol — taper schedule still applies, but the "shedding warning" framing doesn't (no scalp shedding to warn about). Day-30 follow-up still critical. Track separately, not as scalp-protocol failures.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="pc-section" style="background:#f8fafc;">
+      <div class="pc-section-title">Caveats & next steps</div>
+      <div class="pc-section-sub" style="margin:0;">
+        <strong>Sample size warning</strong>: each doctor has 3-7 consults in our 700-call sample, which is statistically thin. To make per-doctor scorecards rigorous, pull all M1 consults for the top doctors (~50 each) and re-grade at population scale. The signal will harden.<br><br>
+        <strong>Action checklist</strong>: (1) Save baseline → (2) Share the 3 scripts + best practices with telehealth team → (3) Audit weekly using AssemblyAI transcripts → (4) Track delta on this dashboard → (5) Watch downstream M1→M2 reorder rate → (6) If reorder rate rises, the analysis pipeline is validated.
+      </div>
+    </div>
+  `
+
+  document.getElementById('protocol-dashboard').innerHTML = html
+}
+
+let _pcSort = null
+function setPCSort(col) {
+  if (_pcSort && _pcSort.col === col) _pcSort.dir = _pcSort.dir === 'desc' ? 'asc' : 'desc'
+  else _pcSort = { col, dir: col === 'name' ? 'asc' : 'desc' }
+  renderProtocolDashboard()
+}
+
+// ── Quality dashboard (full tab pane) ──
+const _qdFilters = { cohort: 'all', doctor: 'all', stage: 'all', delivered: 'all' }
+function setQDFilter(key, value) { _qdFilters[key] = value; renderQualityDashboard() }
+function clearQDFilters() {
+  _qdFilters.cohort = 'all'; _qdFilters.doctor = 'all'; _qdFilters.stage = 'all'; _qdFilters.delivered = 'all'
+  renderQualityDashboard()
+}
+
+function renderQualityDashboard() {
+  const isDelivered = (u) => u.order_meta?.order_status === 'confirmed_order'
+  const ANALYZED = USERS.filter(u => ['M1','M1_reorder','M2','repeat','veteran'].includes(u.m_cohort))
+
+  // Apply filters (each is independent, all must match)
+  let pool = ANALYZED
+  if (_qdFilters.cohort !== 'all') {
+    pool = pool.filter(u => u.m_cohort === _qdFilters.cohort)
+  }
+  if (_qdFilters.delivered === 'delivered') {
+    pool = pool.filter(isDelivered)
+  } else if (_qdFilters.delivered === 'not_delivered') {
+    pool = pool.filter(u => u.order_meta && !isDelivered(u))
+  }
+  if (_qdFilters.stage !== 'all') {
+    if (_qdFilters.stage === 'indiv') pool = pool.filter(u => u.hair_stage == null)
+    else pool = pool.filter(u => String(u.hair_stage) === _qdFilters.stage)
+  }
+  if (_qdFilters.doctor !== 'all') {
+    pool = pool.filter(u => String(u.order_meta?.doctor_id || '') === _qdFilters.doctor)
+  }
+
+  const scoreOf = (obj) => obj && typeof obj === 'object' ? obj.score : obj
+  const dist = (kind, dim) => {
+    const c = { 1: 0, 2: 0, 3: 0 }
+    let total = 0
+    for (const u of pool) {
+      const s = scoreOf((u[kind] || {})[dim])
+      if (s != null && c[s] !== undefined) { c[s]++; total++ }
+    }
+    return { ...c, total, missing: pool.length - total }
+  }
+
+  // Build doctor list (sorted by call volume for our sample)
+  const doctorCounts = {}
+  for (const u of ANALYZED) {
+    const did = u.order_meta?.doctor_id
+    if (!did) continue
+    if (!doctorCounts[did]) doctorCounts[did] = { name: u.order_meta?.doctor_name || did, count: 0 }
+    doctorCounts[did].count++
+  }
+  const sortedDoctors = Object.entries(doctorCounts).sort((a, b) => b[1].count - a[1].count)
+
+  const DOCTOR_DIMS = [
+    { key: 'active_listening',   label: 'Active listening',   tooltip: 'Doctor responds to what the user specifically said' },
+    { key: 'personalisation',    label: 'Personalisation',    tooltip: 'Advice tailored to this user\'s stage + conditions' },
+    { key: 'completeness',       label: 'Completeness',       tooltip: 'Diagnosis + regime + side effects + timeline + expectations' },
+    { key: 'empathy',            label: 'Empathy',            tooltip: 'Doctor acknowledges the user emotionally' },
+    { key: 'no_product_pushing', label: 'No product pushing', tooltip: 'Recommendations are appropriate, not pushed' },
+  ]
+  const CONSUMER_DIMS = [
+    { key: 'reassurance',       label: 'Reassurance',       tooltip: 'User left feeling reassured' },
+    { key: 'doubt_resolution',  label: 'Doubt resolution',  tooltip: 'Doctor resolved user\'s doubts during the call' },
+    { key: 'engagement',        label: 'Engagement',        tooltip: 'User actively participated in the call' },
+    { key: 'confusion_markers', label: 'Confusion markers', tooltip: 'Higher = clearer. 3 = no confusion, 1 = severe' },
+    { key: 'closure',           label: 'Closure',           tooltip: 'Clear next steps + what to expect at call close' },
+  ]
+
+  // SVG donut chart for one dimension
+  const renderChart = (kind, dim) => {
+    const d = dist(kind, dim.key)
+    const total = d.total
+    const avg = total ? ((d[1] + d[2] * 2 + d[3] * 3) / total) : 0
+
+    let pieStyle
+    if (total === 0) {
+      pieStyle = 'background: var(--line)'
+    } else {
+      const a1 = (d[1] / total) * 360
+      const a2 = (d[2] / total) * 360
+      // conic-gradient: red for 0-a1, amber a1-(a1+a2), green (a1+a2)-360
+      pieStyle = `background: conic-gradient(#dc2626 0deg ${a1}deg, #d97706 ${a1}deg ${a1 + a2}deg, #166534 ${a1 + a2}deg 360deg)`
+    }
+    const pct = (n) => total ? Math.round(n / total * 100) : 0
+    return `<div class="qd-chart">
+      <div class="qd-chart-title">${dim.label}</div>
+      <div class="qd-chart-sub">${dim.tooltip}</div>
+      <div class="qd-pie" style="${pieStyle}">
+        <div class="qd-pie-center">
+          <div class="qd-pie-total">${total}</div>
+          <div class="qd-pie-total-label">calls</div>
+        </div>
+      </div>
+      <div class="qd-legend">
+        <div class="qd-legend-row"><span class="qd-legend-left"><span class="qd-legend-dot color-high"></span><span class="qd-legend-label">High</span></span><span class="qd-legend-count">${d[3]}<span class="pct">${pct(d[3])}%</span></span></div>
+        <div class="qd-legend-row"><span class="qd-legend-left"><span class="qd-legend-dot color-med"></span><span class="qd-legend-label">Medium</span></span><span class="qd-legend-count">${d[2]}<span class="pct">${pct(d[2])}%</span></span></div>
+        <div class="qd-legend-row"><span class="qd-legend-left"><span class="qd-legend-dot color-low"></span><span class="qd-legend-label">Low</span></span><span class="qd-legend-count">${d[1]}<span class="pct">${pct(d[1])}%</span></span></div>
+      </div>
+      <div class="qd-chart-avg">avg <strong>${avg.toFixed(2)}</strong> · <strong>${pct(d[2] + d[3])}%</strong> medium+high</div>
+    </div>`
+  }
+
+  // Cohort options
+  const cohortCounts = {
+    all:        ANALYZED.length,
+    M1:         ANALYZED.filter(u => u.m_cohort === 'M1').length,
+    M1_reorder: ANALYZED.filter(u => u.m_cohort === 'M1_reorder').length,
+    M2:         ANALYZED.filter(u => u.m_cohort === 'M2').length,
+    repeat:     ANALYZED.filter(u => u.m_cohort === 'repeat').length,
+    veteran:    ANALYZED.filter(u => u.m_cohort === 'veteran').length,
+  }
+  const stageCounts = {
+    all:   ANALYZED.length,
+    '2':   ANALYZED.filter(u => u.hair_stage === 2).length,
+    '3':   ANALYZED.filter(u => u.hair_stage === 3).length,
+    '4':   ANALYZED.filter(u => u.hair_stage === 4).length,
+    indiv: ANALYZED.filter(u => u.hair_stage == null).length,
+  }
+  const deliveredCounts = {
+    all:           ANALYZED.length,
+    delivered:     ANALYZED.filter(isDelivered).length,
+    not_delivered: ANALYZED.filter(u => u.order_meta && !isDelivered(u)).length,
+  }
+
+  const filterActiveCount = ['cohort','doctor','stage','delivered'].filter(k => _qdFilters[k] !== 'all').length
+
+  const html = `
+    <div class="qd-filterbar">
+      <div class="qd-filter-group">
+        <label>Cohort</label>
+        <select onchange="setQDFilter('cohort', this.value)">
+          <option value="all" ${_qdFilters.cohort === 'all' ? 'selected' : ''}>All cohorts (${cohortCounts.all})</option>
+          <option value="M1" ${_qdFilters.cohort === 'M1' ? 'selected' : ''}>M1 non-reorderer (${cohortCounts.M1})</option>
+          <option value="M1_reorder" ${_qdFilters.cohort === 'M1_reorder' ? 'selected' : ''}>M1 reorderer (${cohortCounts.M1_reorder})</option>
+          <option value="M2" ${_qdFilters.cohort === 'M2' ? 'selected' : ''}>M2 (${cohortCounts.M2})</option>
+          <option value="repeat" ${_qdFilters.cohort === 'repeat' ? 'selected' : ''}>Repeat 3-4 (${cohortCounts.repeat})</option>
+          <option value="veteran" ${_qdFilters.cohort === 'veteran' ? 'selected' : ''}>Veteran 5+ (${cohortCounts.veteran})</option>
+        </select>
+      </div>
+      <div class="qd-filter-group">
+        <label>Delivered</label>
+        <select onchange="setQDFilter('delivered', this.value)">
+          <option value="all" ${_qdFilters.delivered === 'all' ? 'selected' : ''}>Any status (${deliveredCounts.all})</option>
+          <option value="delivered" ${_qdFilters.delivered === 'delivered' ? 'selected' : ''}>Delivered (${deliveredCounts.delivered})</option>
+          <option value="not_delivered" ${_qdFilters.delivered === 'not_delivered' ? 'selected' : ''}>Cancelled / RTO (${deliveredCounts.not_delivered})</option>
+        </select>
+      </div>
+      <div class="qd-filter-group">
+        <label>Stage</label>
+        <select onchange="setQDFilter('stage', this.value)">
+          <option value="all" ${_qdFilters.stage === 'all' ? 'selected' : ''}>All stages</option>
+          <option value="2" ${_qdFilters.stage === '2' ? 'selected' : ''}>Stage 2 (${stageCounts['2']})</option>
+          <option value="3" ${_qdFilters.stage === '3' ? 'selected' : ''}>Stage 3 (${stageCounts['3']})</option>
+          <option value="4" ${_qdFilters.stage === '4' ? 'selected' : ''}>Stage 4 (${stageCounts['4']})</option>
+          <option value="indiv" ${_qdFilters.stage === 'indiv' ? 'selected' : ''}>Individual SKU (${stageCounts.indiv})</option>
+        </select>
+      </div>
+      <div class="qd-filter-group">
+        <label>Doctor</label>
+        <select onchange="setQDFilter('doctor', this.value)">
+          <option value="all" ${_qdFilters.doctor === 'all' ? 'selected' : ''}>All doctors (${sortedDoctors.length})</option>
+          ${sortedDoctors.map(([id, d]) => `<option value="${id}" ${_qdFilters.doctor === id ? 'selected' : ''}>${d.name} (${d.count})</option>`).join('')}
+        </select>
+      </div>
+      ${filterActiveCount > 0 ? `<button class="qd-clear-btn" onclick="clearQDFilters()">Clear ${filterActiveCount} filter${filterActiveCount > 1 ? 's' : ''}</button>` : ''}
+      <span class="qd-filter-meta"><strong>${pool.length}</strong> call${pool.length !== 1 ? 's' : ''} match</span>
+    </div>
+
+    ${pool.length === 0 ? `
+    <div class="qd-section" style="text-align:center;color:var(--ink-light);padding:48px;">
+      <div style="font-size:14px;font-weight:600;color:var(--ink-mid);margin-bottom:8px;">No calls match these filters</div>
+      <div>Try clearing filters or adjusting the cohort / doctor / stage selection.</div>
+    </div>` : `
+    <div class="qd-section">
+      <div class="qd-section-title">🩺 Doctor quality — how the doctor performed</div>
+      <div class="qd-section-sub">Distribution of scores across the ${pool.length} matching call${pool.length !== 1 ? 's' : ''}. High = strong/explicit, Medium = ok/mixed, Low = poor/absent. Number in each pie = total calls scored on that dimension.</div>
+      <div class="qd-charts">
+        ${DOCTOR_DIMS.map(d => renderChart('doctor_quality', d)).join('')}
+      </div>
+    </div>
+
+    <div class="qd-section">
+      <div class="qd-section-title">👤 Customer experience — how the user came out of the call</div>
+      <div class="qd-section-sub">User-side experience signals from each call. Same pool of ${pool.length} call${pool.length !== 1 ? 's' : ''}.</div>
+      <div class="qd-charts">
+        ${CONSUMER_DIMS.map(d => renderChart('consumer_quality', d)).join('')}
+      </div>
+    </div>`}
+
+    <div class="qd-section" style="background:#f8fafc;">
+      <div class="qd-section-title">How to read this</div>
+      <div class="qd-section-sub" style="margin:0;">
+        Filter by cohort, delivery status, stage, or specific doctor (top 50+ doctors in the analysed sample). Pies update live. Doctor view: pick a doctor with ≥5 calls in the sample to see their personal pattern; below that, distributions are too thin to be reliable.
+        <br><br>
+        Scores are 1–3 (Low / Medium / High) graded by an LLM agent reading each transcript. <strong>Caveat:</strong> these are subjective dimensions, not auditable per call — treat as directional best-practice guidance, not as a per-call grade. The auditable binary 3-script signals (shedding / tapering / Day-30) live in the <em>Reorderer Protocol</em> modal.
+      </div>
+    </div>
+  `
+  document.getElementById('quality-dashboard').innerHTML = html
+}
+
+// ── Quality distribution modal (legacy quick-look) ──
+let _qualityCohort = 'all'
+function openQualityInsights() {
+  renderQualityInsights()
+  document.getElementById('quality-overlay').classList.add('open')
+  document.getElementById('quality-modal').classList.add('open')
+}
+function closeQualityInsights() {
+  document.getElementById('quality-overlay').classList.remove('open')
+  document.getElementById('quality-modal').classList.remove('open')
+}
+function setQualityCohort(c) {
+  _qualityCohort = c
+  renderQualityInsights()
+}
+
+function renderQualityInsights() {
+  const isDelivered = (u) => u.order_meta?.order_status === 'confirmed_order'
+
+  // Pick cohort
+  let pool
+  let label
+  switch (_qualityCohort) {
+    case 'm1':       pool = USERS.filter(u => u.m_cohort === 'M1');                          label = 'M1 non-reorderer (all)'; break
+    case 'm1d':      pool = USERS.filter(u => u.m_cohort === 'M1' && isDelivered(u));        label = 'M1 non-reorderer (delivered only)'; break
+    case 'r':        pool = USERS.filter(u => u.m_cohort === 'M1_reorder');                  label = 'M1 reorderer (all)'; break
+    case 'rd':       pool = USERS.filter(u => u.m_cohort === 'M1_reorder' && isDelivered(u)); label = 'M1 reorderer (delivered only)'; break
+    default:         pool = USERS.filter(u => ['M1','M1_reorder'].includes(u.m_cohort));     label = 'All M1 + reorderer (n=' + USERS.filter(u => ['M1','M1_reorder'].includes(u.m_cohort)).length + ')'
+  }
+
+  // Build distribution: dimension → {1:n, 2:n, 3:n, total:n}
+  const scoreOf = (obj) => {
+    if (!obj) return null
+    if (typeof obj === 'object') return obj.score
+    return obj
+  }
+  const dist = (kind, dim) => {
+    const counts = { 1: 0, 2: 0, 3: 0 }
+    let total = 0
+    for (const u of pool) {
+      const obj = (u[kind] || {})[dim]
+      const s = scoreOf(obj)
+      if (s !== null && s !== undefined && counts[s] !== undefined) {
+        counts[s]++
+        total++
+      }
+    }
+    return { ...counts, total, missing: pool.length - total }
+  }
+
+  const DOCTOR_DIMS = [
+    { key: 'active_listening',   label: 'Active listening',   tooltip: 'Doctor responds to what user specifically said' },
+    { key: 'personalisation',    label: 'Personalisation',    tooltip: 'Advice specific to this user’s stage and conditions' },
+    { key: 'completeness',       label: 'Completeness',       tooltip: 'Diagnosis + regime + side effects + timeline + expectations' },
+    { key: 'empathy',            label: 'Empathy',            tooltip: 'Doctor acknowledges emotional state' },
+    { key: 'no_product_pushing', label: 'No product pushing', tooltip: 'Recommendations are appropriate, not pushed' },
+    { key: 'shedding_warning',   label: 'Shedding warning',   tooltip: 'Strict: explicit warning that hair fall may temporarily INCREASE in first 2-8 weeks' },
+    { key: 'tapering_protocol',  label: 'Tapering protocol',  tooltip: 'Strict: NEVER STOP SUDDENLY + reduction schedule' },
+    { key: 'day30_followup',     label: 'Day-30 follow-up',   tooltip: 'Strict: doctor proactively booked 1-month follow-up' },
+  ]
+  const CONSUMER_DIMS = [
+    { key: 'reassurance',       label: 'Reassurance',       tooltip: 'User left feeling reassured' },
+    { key: 'doubt_resolution',  label: 'Doubt resolution',  tooltip: 'Doctor resolved user doubts during the call' },
+    { key: 'engagement',        label: 'Engagement',        tooltip: 'User actively participated in the call' },
+    { key: 'confusion_markers', label: 'Confusion markers', tooltip: 'Higher = clearer (less confusion). 3 = clear, 1 = severe confusion' },
+    { key: 'closure',           label: 'Closure',           tooltip: 'Clear next steps + what to expect at call close' },
+  ]
+
+  const renderRow = (kind, dim) => {
+    const d = dist(kind, dim.key)
+    const n = d.total || 1
+    const w1 = (d[1] / n) * 100
+    const w2 = (d[2] / n) * 100
+    const w3 = (d[3] / n) * 100
+    const avg = n ? ((d[1] * 1 + d[2] * 2 + d[3] * 3) / n).toFixed(2) : '—'
+    return `<div class="qd-row" title="${dim.tooltip}">
+      <span class="qd-label">${dim.label}</span>
+      <div class="qd-bar">
+        <div class="qd-seg qd-1" style="width:${w1}%" title="Score 1: ${d[1]}">${d[1] > 0 ? d[1] : ''}</div>
+        <div class="qd-seg qd-2" style="width:${w2}%" title="Score 2: ${d[2]}">${d[2] > 0 ? d[2] : ''}</div>
+        <div class="qd-seg qd-3" style="width:${w3}%" title="Score 3: ${d[3]}">${d[3] > 0 ? d[3] : ''}</div>
+      </div>
+      <span class="qd-avg">avg ${avg}</span>
+      <span class="qd-n">n=${d.total}${d.missing ? ' · ' + d.missing + ' missing' : ''}</span>
+    </div>`
+  }
+
+  const tab = (key, name) => `<button class="filter-btn ${_qualityCohort === key ? 'active' : ''}" onclick="setQualityCohort('${key}')">${name}</button>`
+
+  const html = `
+    <style>
+      .qd-tabs { display: flex; gap: 8px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+      .qd-tabs .filter-btn { padding: 6px 12px; font-size: 12px; }
+      .qd-section-head { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; color: var(--navy); margin: 18px 0 8px 0; padding: 6px 0; }
+      .qd-cohort-meta { font-size: 12px; color: var(--ink-light); padding: 0 0 12px 0; }
+      .qd-row { display: grid; grid-template-columns: 180px 1fr 80px 110px; gap: 10px; align-items: center; padding: 6px 0; font-size: 12.5px; }
+      .qd-label { font-weight: 600; color: var(--ink-mid); }
+      .qd-bar { display: flex; height: 22px; border-radius: 4px; overflow: hidden; background: var(--line); }
+      .qd-seg { display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700; min-width: 0; }
+      .qd-seg.qd-1 { background: #dc2626; }
+      .qd-seg.qd-2 { background: #d97706; }
+      .qd-seg.qd-3 { background: #166534; }
+      .qd-avg { font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 13px; color: var(--ink-mid); text-align: right; }
+      .qd-n { font-size: 11px; color: var(--ink-light); }
+      .qd-legend { display: flex; gap: 16px; font-size: 11px; color: var(--ink-light); margin: 8px 0 18px 0; }
+      .qd-legend-dot { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+    </style>
+
+    <div class="qd-tabs">
+      ${tab('all',  'All M1 + R')}
+      ${tab('m1',   'M1 non-reorderer (200)')}
+      ${tab('m1d',  'M1 NR · delivered (138)')}
+      ${tab('r',    'M1 reorderer (150)')}
+      ${tab('rd',   'M1 R · delivered (139)')}
+    </div>
+
+    <div class="qd-cohort-meta"><strong>Cohort:</strong> ${label} · <strong>${pool.length}</strong> calls</div>
+
+    <div class="qd-legend">
+      <span><span class="qd-legend-dot" style="background:#dc2626"></span>Score 1 (poor / absent)</span>
+      <span><span class="qd-legend-dot" style="background:#d97706"></span>Score 2 (ok / mixed)</span>
+      <span><span class="qd-legend-dot" style="background:#166534"></span>Score 3 (strong / explicit)</span>
+    </div>
+
+    <div class="qd-section-head">🩺 Doctor quality (8 dimensions)</div>
+    ${DOCTOR_DIMS.map(d => renderRow('doctor_quality', d)).join('')}
+
+    <div class="qd-section-head">👤 Consumer quality (5 dimensions)</div>
+    ${CONSUMER_DIMS.map(d => renderRow('consumer_quality', d)).join('')}
+
+    <div class="qd-cohort-meta" style="margin-top:18px;">
+      <strong>How to read this:</strong> bar segments are widths proportional to count, numbers inside are absolute counts. avg = average score (1-3). n = scored cards. <em>missing</em> = cards where this dimension wasn't graded (mostly the very early M1 cards).
+      <br><br>
+      <strong>What's robust:</strong> the binary protocol scripts (shedding/tapering/day30 — bottom 3 of doctor) were graded under a strict rubric. The other 1-3 dimensions (active_listening, empathy, reassurance, etc.) were agent judgement calls and have some scoring drift between batches; treat as directional, not auditable.
+    </div>
+  `
+
+  document.getElementById('quality-body').innerHTML = html
+}
+
+// Tab switching inside the user card
+function switchTab(btn, paneKey) {
+  const card = btn.closest('.user-card') || document
+  card.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  card.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === paneKey))
+}
+
+// ── Suggested action; friendly chip + one-line "why" ──
+const ACTION_CHIPS = {
+  'clinical_followup':       { icon: '🩺', name: 'Clinical follow-up', tone: 'amber' },
+  'adherence_recovery_call': { icon: '📞', name: 'Adherence recovery call', tone: 'sage' },
+  'personal_call':           { icon: '📞', name: 'Personal call', tone: 'sage' },
+  'whatsapp_nudge':          { icon: '💬', name: 'WhatsApp nudge', tone: 'sage' },
+  'confused_resolution':     { icon: '🔄', name: 'Re-engage on confusion', tone: 'amber' },
+  'no_action':               { icon: '👁',  name: 'Monitor only', tone: 'mute' }
+}
+
+function renderSuggestedAction(actionObj) {
+  if (!actionObj) return ''
+  const v = valOf(actionObj)
+  const chip = ACTION_CHIPS[v] || { icon: '•', name: v, tone: 'mute' }
+  const summary = (actionObj.summary || actionObj.label) ? `<div class="action-summary">${escapeHtml(actionObj.summary || '')}</div>` : ''
+  return `<div class="action-block">
+    <div class="section-heading">Suggested action</div>
+    <div class="action-chip tone-${chip.tone}">
+      <span class="action-icon">${chip.icon}</span>
+      <span class="action-name">${escapeHtml(chip.name)}</span>
+    </div>
+    ${summary}
+  </div>`
+}
+
+// ── Summary tab; important points + quotes + product-pushing check ──
+function renderSummary(summary) {
+  if (!summary) return '<div style="color:var(--ink-light);font-size:13px;">No summary yet.</div>'
+  const points = (summary.key_points || []).map(p => `<li>${md(p)}</li>`).join('')
+  const speakerIcon = (sp) => {
+    const s = (sp || '').toLowerCase()
+    if (s.includes('doctor')) return '🩺'
+    if (s.includes('patient') || s.includes('user') || s.includes('customer')) return '👤'
+    return '💬'
+  }
+  const quotes = (summary.quotes || []).map(q => {
+    const lang = q.lang ? `<span class="quote-lang">${q.lang.toUpperCase()}</span>` : ''
+    const trans = q.translation ? `<div class="quote-trans">${md(q.translation)}</div>` : ''
+    return `<div class="quote-item ${(q.speaker||'').toLowerCase().includes('doctor') ? 'quote-doctor' : 'quote-patient'}">
+      <div class="quote-head"><span class="quote-icon">${speakerIcon(q.speaker)}</span><span class="quote-speaker">${escapeHtml(q.speaker || '-')}</span>${lang}</div>
+      <div class="quote-text">"${md(q.text || '')}"</div>
+      ${trans}
+    </div>`
+  }).join('')
+  const ppc = summary.product_pushing_check || {}
+  const productPushHtml = renderProductPushCheck(ppc)
+  return `
+    ${points ? `<div class="sum-block">
+      <div class="sum-heading"><span class="sec-icon">📝</span> Key points from the call</div>
+      <ul class="sum-list">${points}</ul>
+    </div>` : ''}
+    ${productPushHtml}
+    ${quotes ? `<div class="sum-block">
+      <div class="sum-heading"><span class="sec-icon">💬</span> Notable quotes</div>
+      <div class="quotes-wrap">${quotes}</div>
+    </div>` : ''}
+  `
+}
+
+function renderProductPushCheck(ppc) {
+  if (!ppc || (!ppc.extras_added && !ppc.products_removed?.length)) {
+    return `<div class="sum-block">
+      <div class="sum-heading">Product pushing check</div>
+      <div class="ppc-row"><span class="ppc-label">Extras added?</span><span class="ans-yes" style="font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:4px;">No</span></div>
+    </div>`
+  }
+  const extrasYes = ppc.extras_added === true
+  const requiredYes = ppc.was_required === true
+  const concernedYes = ppc.user_concerned === true
+  const extrasAns = extrasYes ? `<span class="ans-mixed" style="font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:4px;">Yes; ${(ppc.products_added||[]).length} product${(ppc.products_added||[]).length === 1 ? '' : 's'}</span>` : `<span class="ans-yes" style="font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:4px;">No</span>`
+  const requiredAns = requiredYes ? `<span class="ans-yes" style="font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:4px;">Yes; medically required</span>` : `<span class="ans-no" style="font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:4px;">No; overprescription</span>`
+  const concernedAns = concernedYes ? `<span class="ans-no" style="font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:4px;">Yes; user showed concern</span>` : `<span class="ans-yes" style="font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:4px;">No</span>`
+  const productsAdded = ppc.products_added?.length ? `<div class="ppc-products"><span class="ppc-label-small">Products added:</span> ${ppc.products_added.map(p => `<span class="tag-chip">${md(p)}</span>`).join('')}</div>` : ''
+  const productsRemoved = ppc.products_removed?.length ? `<div class="ppc-products"><span class="ppc-label-small">Products removed:</span> ${ppc.products_removed.map(p => `<span class="tag-chip" style="background:var(--sage-light);border-color:#b8d8c2;color:var(--sage);">− ${md(p)}</span>`).join('')}</div>` : ''
+  const note = ppc.notes ? `<div class="ppc-note">${md(ppc.notes)}</div>` : ''
+  return `<div class="sum-block">
+    <div class="sum-heading"><span class="sec-icon">💊</span> Product pushing check</div>
+    <div class="ppc-grid">
+      <div class="ppc-row"><span class="ppc-label"><span class="ppc-icon">➕</span> Extras added?</span>${extrasAns}</div>
+      ${extrasYes ? `<div class="ppc-row"><span class="ppc-label"><span class="ppc-icon">🩺</span> Was it medically required?</span>${requiredAns}</div>` : ''}
+      ${extrasYes ? `<div class="ppc-row"><span class="ppc-label"><span class="ppc-icon">⚠️</span> Did user push back / show concern?</span>${concernedAns}</div>` : ''}
+    </div>
+    ${productsAdded}
+    ${productsRemoved}
+    ${note}
+  </div>`
+}
+
+// Supporting tactics — additional moves layered onto the primary action
+const TACTIC_META = {
+  'discount_offer':         { icon: '💰', label: 'Discount / payment plan' },
+  'social_proof':           { icon: '⭐', label: 'Social proof / "user like you"' },
+  'regime_simplification':  { icon: '📉', label: 'Simplified regime' },
+  'senior_doctor_referral': { icon: '🩺', label: 'Senior doctor consult' },
+  'results_check_in':       { icon: '📊', label: 'Results check-in (no sales)' },
+}
+function renderSupportingTactics(tactics) {
+  if (!tactics || !tactics.length) return ''
+  // Show only the priority (first) tactic. Schema allows more for future, but we keep the UI focused.
+  const t = tactics[0]
+  const m = TACTIC_META[t.type] || { icon: '•', label: t.type }
+  return `<div class="tactics-block">
+    <div class="section-heading"><span class="sec-icon">🧰</span> Priority supporting tactic</div>
+    <div class="tactic-item">
+      <div class="tactic-head"><span class="tactic-icon">${m.icon}</span><span class="tactic-label">${escapeHtml(m.label)}</span></div>
+      <div class="tactic-note">${md(t.note || '')}</div>
+    </div>
+  </div>`
+}
+
+function renderOutreachPlan(plan) {
+  if (!plan) return ''
+  const hypo = plan.hypothesis ? `<div class="plan-block">
+    <div class="plan-label"><span class="plan-icon">🎯</span> Hypothesis: why they didn't reorder</div>
+    <div class="plan-body">${md(plan.hypothesis)}</div>
+  </div>` : ''
+  const stakes = plan.stakes ? `<div class="plan-block">
+    <div class="plan-label"><span class="plan-icon">⚖️</span> Stakes</div>
+    <div class="plan-body">${md(plan.stakes)}</div>
+  </div>` : ''
+  const doList = (plan.do || []).map(s => `<li>${md(s)}</li>`).join('')
+  const avoidList = (plan.avoid || []).map(s => `<li>${md(s)}</li>`).join('')
+  const doBlock = doList ? `<div class="plan-block">
+    <div class="plan-label do-label"><span class="plan-icon">✅</span> What outreach should do</div>
+    <ol class="plan-list">${doList}</ol>
+  </div>` : ''
+  const avoidBlock = avoidList ? `<div class="plan-block">
+    <div class="plan-label avoid-label"><span class="plan-icon">⛔</span> What to avoid</div>
+    <ul class="plan-list avoid">${avoidList}</ul>
+  </div>` : ''
+  return `<div class="outreach-plan">
+    <div class="section-heading">Outreach plan</div>
+    ${hypo}
+    ${doBlock}
+    ${avoidBlock}
+    ${stakes}
+  </div>`
+}
+
+function closeCard() {
+  document.getElementById('overlay').classList.remove('open')
+  document.getElementById('user-card').classList.remove('open')
+  activeUser = null
+  renderList()
+}
+
+function setStatus(id, status) {
+  statuses[id] = status
+  updateCounts()
+  renderList()
+  openCard(id)
+}
+
+// ── Filters ──
+document.querySelectorAll('[data-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    filters.risk = btn.dataset.filter
+    renderList()
+  })
+})
+
+document.querySelectorAll('[data-filter-action]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-filter-action]').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    filters.action = btn.dataset.filterAction
+    renderList()
+  })
+})
+
+document.querySelectorAll('[data-filter-stage]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-filter-stage]').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    filters.stage = btn.dataset.filterStage
+    renderList()
+  })
+})
+
+document.querySelectorAll('[data-filter-cohort]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-filter-cohort]').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    filters.cohort = btn.dataset.filterCohort
+    renderList()
+  })
+})
+
+boot()
+</script>
+</body>
+</html>
