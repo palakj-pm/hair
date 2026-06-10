@@ -1,0 +1,16 @@
+Consult ID: 1750168
+Source:     https://mw-dochub.s3.amazonaws.com/appointments/recordings/audio/exotel/dd4c6fb0e7ed00f20a255d9d06041a2b.mp3
+Language:   en
+Duration:   20s
+------------------------------------------------------------
+
+Speaker A: Hello?
+
+Speaker B: Hello.
+
+Speaker A: Good morning, Sir. This is Dr. Habiba calling from Manmasters. Are you comfortable with English or Hindi?
+
+Speaker B: Actually, I'm busy right now.
+
+Speaker A: Okay, sure. That's not a problem.
+

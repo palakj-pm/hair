@@ -1,0 +1,28 @@
+Consult ID: 1820229
+Source:     https://mw-dochub.s3.amazonaws.com/appointments/recordings/audio/exotel/18beb7cf1140b0444c87f37448921a2s.mp3
+Language:   hi
+Duration:   39s
+------------------------------------------------------------
+
+Speaker A: हेलो
+
+Speaker B: हेलो
+
+Speaker A: आज
+
+Speaker B: ही विक्रम के लिए कॉल है। मैं डॉक्टर मनीषा शर्मा बोल रही हूँ ऐसी
+
+Speaker A: जी
+
+Speaker B: आपने जो स्वागत किया है इसके लिए आपका कॉम्पिटिशन है आप फ्री है
+
+Speaker A: फ्री तो नही है फिर भी आप कम भी ये बात है
+
+Speaker B: तो अगर आप फ्री नहीं है बाद में सिड्यूल कर सकते है
+
+Speaker A: हाँ बाद में कर लीजिये आप 1 घंटे बाद लगा लीजिये
+
+Speaker B: वो नहीं कर सकती कर देती हूँ आपके थ्रू कॉल कर लीजिये
+
+Speaker A: जी ओके।
+

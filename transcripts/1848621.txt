@@ -1,0 +1,16 @@
+Consult ID: 1848621
+Source:     https://mw-dochub.s3.amazonaws.com/appointments/recordings/audio/exotel/63cee92db4704c4090e7eecb0e031a38.mp3
+Language:   te
+Duration:   20s
+------------------------------------------------------------
+
+Speaker A: Hello?
+
+Speaker B: Hello, good morning. I am Dr.Sanjitha, General Physician at Ramamurthy. Are you free for the consultation now?
+
+Speaker A: No, ma'am. Can you call back after half an hour?
+
+Speaker B: Sure, sir. Just book a consultation in your free time. We will call you back.
+
+Speaker A: Okay, come on. Oh, fuck!
+

@@ -1,0 +1,26 @@
+Consult ID: 1788733
+Source:     https://mw-dochub.s3.amazonaws.com/appointments/recordings/audio/exotel/6f82cde6b2e248abd4ec06de29581a2l.mp3
+Language:   en
+Duration:   36s
+------------------------------------------------------------
+
+Speaker A: Hello.
+
+Speaker B: Hello. Hello. Good morning. This is Dr. Chaitanya. I'm calling you from Man Matters.
+
+Speaker A: Yeah.
+
+Speaker B: What is your comfortable language?
+
+Speaker A: English.
+
+Speaker B: Yes. You have ordered some products. It's been directed to me for a medical consult. Can I talk to you for 10 minutes regarding it?
+
+Speaker A: I have a pointed for you.
+
+Speaker B: What?
+
+Speaker A: I was facing the restaurant.
+
+Speaker B: Okay, thanks.
+

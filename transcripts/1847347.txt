@@ -1,0 +1,18 @@
+Consult ID: 1847347
+Source:     https://mw-dochub.s3.amazonaws.com/appointments/recordings/audio/exotel/cabfc2854c87caf69ed12625231e1a37.mp3
+Language:   en
+Duration:   23s
+------------------------------------------------------------
+
+Speaker A: Hello.
+
+Speaker B: Hello, I'm Dr. General Patient calling from Man Matters. You have placed an order in the Man Matters.
+
+Speaker A: Yeah, can you call me later?
+
+Speaker B: No issues. You can book an appointment at your free time and you can proceed for the consultation. Okay? Okay.
+
+Speaker A: Okay.
+
+Speaker B: Take care. Have a nice day. Bye.
+

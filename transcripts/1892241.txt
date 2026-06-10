@@ -1,0 +1,10 @@
+Consult ID: 1892241
+Source:     https://mw-dochub.s3.amazonaws.com/appointments/recordings/audio/exotel/72748a3d043652baa8878522ffb11a3j.mp3
+Language:   en
+Duration:   17s
+------------------------------------------------------------
+
+Speaker A: Hello? Your voice is not clear. Can you please speak in loud?
+
+Speaker B: Yes.
+
