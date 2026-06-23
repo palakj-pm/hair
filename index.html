@@ -1698,6 +1698,7 @@ body {
       <button class="outline" onclick="openGuide()">📖 Scoring guide</button>
       <button class="outline" onclick="openInsights()">📊 M1 Insights</button>
       <button class="outline" onclick="openReordererInsights()">📈 Reorderer Protocol</button>
+      <button class="outline" onclick="openContextInsights()">🗣️ User context</button>
       <span class="feedback-summary"><strong id="feedback-count">0</strong> reviews</span>
       <button class="outline" onclick="exportFeedback()">⬇ Export</button>
       <button class="outline" onclick="document.getElementById('import-feedback').click()">⬆ Import</button>
@@ -1762,6 +1763,21 @@ body {
   </div>
   <div class="guide-body" id="insights-body">
     <!-- populated by renderInsights() -->
+  </div>
+</div>
+
+<!-- USER CONTEXT INSIGHTS MODAL -->
+<div class="guide-overlay" id="context-overlay" onclick="closeContextInsights()"></div>
+<div class="guide-modal insights-modal" id="context-modal">
+  <div class="guide-head">
+    <div>
+      <div class="guide-title">User context — consolidated report</div>
+      <div class="guide-sub">What customers are actually saying, aggregated across all analysed consults. Each user is counted once per theme, so a user with multiple barriers appears in several bars. Themes are keyword-grouped from free-text LLM extraction — directional, not exact.</div>
+    </div>
+    <button class="card-close" onclick="closeContextInsights()">&times;</button>
+  </div>
+  <div class="guide-body" id="context-body">
+    <!-- populated by renderContextInsights() -->
   </div>
 </div>
 
@@ -2466,6 +2482,173 @@ function jumpToCard(cid) {
     openCard(u.customer_id)
   }
 }
+// ── User context consolidated report ──
+function openContextInsights() {
+  renderContextInsights()
+  document.getElementById('context-overlay').classList.add('open')
+  document.getElementById('context-modal').classList.add('open')
+}
+function closeContextInsights() {
+  document.getElementById('context-overlay').classList.remove('open')
+  document.getElementById('context-modal').classList.remove('open')
+}
+
+function renderContextInsights() {
+  const all = USERS
+  const total = all.length
+  const pct = n => Math.round(n / total * 100)
+
+  // user_context field accessor — each field is {value, confidence}; value may be string or array
+  const ucVals = (u, f) => {
+    const x = (u.user_context || {})[f]
+    const v = x && typeof x === 'object' ? x.value : null
+    if (v === null || v === undefined) return []
+    return (Array.isArray(v) ? v : [v]).map(z => String(z))
+  }
+
+  // Emotional state -> one primary bucket per user (most-negative/actionable wins)
+  const emoBucket = s => {
+    s = (s || '').toLowerCase()
+    if (/convert|reorder/.test(s)) return 'Converted'
+    if (/frustrat/.test(s)) return 'Frustrated'
+    if (/anxious|worried|worry|nervous|concern|fearful/.test(s)) return 'Anxious'
+    if (/confus|overwhelm|uncertain|dependent|distract/.test(s)) return 'Confused'
+    if (/resign|fatalist|skeptic|distrust/.test(s)) return 'Resigned / skeptical'
+    if (/hopeful|grateful|interested|curious/.test(s)) return 'Hopeful'
+    if (/calm|neutral|transactional|casual|pragmatic|engaged|thoughtful|assertive|polite|agreeable|self-aware/.test(s)) return 'Calm / neutral'
+    return 'Other / unclear'
+  }
+  const emo = {}
+  all.forEach(u => {
+    const vv = ucVals(u, 'emotional_state')
+    const b = vv.length ? emoBucket(vv[0]) : 'Other / unclear'
+    emo[b] = (emo[b] || 0) + 1
+  })
+
+  // Theme bucketing: a user is counted once if ANY of their items in `field` matches the pattern
+  const bucketize = (field, buckets) => {
+    const out = {}
+    buckets.forEach(([name]) => { out[name] = 0 })
+    all.forEach(u => {
+      const joined = ucVals(u, field).join(' || ').toLowerCase()
+      buckets.forEach(([name, re]) => { if (re.test(joined)) out[name]++ })
+    })
+    return out
+  }
+
+  const barrierBuckets = [
+    ['Cost / affordability', /cost|price|expensive|afford|budget|emi|money/],
+    ['Side-effect / safety fear', /side.?effect|fear|scared|shed|worse|safety|dependency|tablet|oral.*(fear|concern|hesit)/],
+    ['Skeptical of results / efficacy', /doubt|skeptic|not convinced|efficacy|results|will it work|no improvement/],
+    ['Hard / problem water', /\bwater\b|borewell/],
+    ['Stress', /stress|tension/],
+    ['Sleep / shift work', /sleep|night shift|insomnia/],
+    ['Smoking / alcohol', /smok|alcohol|drink/],
+    ['Diet / no exercise', /diet|exercise|protein|junk|outside food/],
+    ['Dandruff / scalp', /dandruff|itch|flak|scalp/],
+    ['Comprehension / language', /language|comprehen|hinglish|code.?switch|hindi|translat|friction|talked over/],
+    ['Photo / app friction', /photo|upload|\bapp\b|portal|otp|login/],
+    ['Time / routine adherence', /routine|\btime\b|busy|forget|adher|consisten|travel/],
+    ['Prior treatment failure', /prior|previous|failed|relapse|stopped/],
+    ['Family hesitation', /family.*(hesit|against|convince)|spouse|wife|parent/],
+  ]
+  const concernBuckets = [
+    ['Hair fall / shedding', /hair ?fall|shedding|\bfall\b|\bloss\b/],
+    ['Receding hairline / M-pattern', /receding|hairline|m.?pattern|frontal|temple|recession/],
+    ['Overall thinning / density', /thinning|density|volume|\bthin\b/],
+    ['Beard concerns', /beard|moustache|cheek|jaw/],
+    ['Dandruff / itching', /dandruff|itch|flak/],
+    ['Patchy / bald spots', /patch|bald|spot|alopecia|coin/],
+    ['Regrowth / growth wanted', /regrow|growth|regain/],
+    ['Crown / vertex thinning', /crown|vertex|tonsure/],
+  ]
+  const triggerBuckets = [
+    ['Genetic / family history', /genetic|family|father|hereditary|parent/],
+    ['Aging / gradual onset', /gradual|aging|\bage\b|progress|long.?stand|years/],
+    ['Recent / sudden onset', /sudden|recent|noticed|acute/],
+    ['Hard water', /water/],
+    ['Dandruff / scalp', /dandruff|itch|scalp/],
+    ['Lifestyle (sleep/diet/smoking)', /sleep|diet|smok|alcohol|lifestyle|junk/],
+    ['Stress', /stress|tension/],
+    ['Post-illness / medical', /illness|jaundice|typhoid|dengue|covid|surgery|medical|thyroid|pcos|postpartum|deliver/],
+  ]
+
+  const barriers = bucketize('barriers', barrierBuckets)
+  const concerns = bucketize('main_concern', concernBuckets)
+  const triggers = bucketize('trigger', triggerBuckets)
+
+  // Coverage stats for the supporting fields
+  const hasNonNull = f => all.filter(u => ucVals(u, f).some(v => v && !/^null$/i.test(v))).length
+  const priorTreatment = hasNonNull('past_treatment')
+  const withConfusion = hasNonNull('confusion_markers')
+
+  const negEmo = (emo['Anxious'] || 0) + (emo['Frustrated'] || 0) + (emo['Resigned / skeptical'] || 0) + (emo['Confused'] || 0)
+  const topBarrier = Object.entries(barriers).sort((a, b) => b[1] - a[1])[0]
+  const topConcern = Object.entries(concerns).sort((a, b) => b[1] - a[1])[0]
+
+  const bars = obj => {
+    const entries = Object.entries(obj).sort((a, b) => b[1] - a[1])
+    const max = Math.max(...entries.map(e => e[1]), 1)
+    return entries.map(([k, v]) => `
+      <div class="insight-bar-row">
+        <span class="insight-bar-label">${k}</span>
+        <div class="insight-bar-track"><div class="insight-bar-fill" style="width:${v / max * 100}%"></div></div>
+        <span class="insight-bar-num">${v} <span style="color:var(--ink-light);font-weight:400">(${pct(v)}%)</span></span>
+      </div>`).join('')
+  }
+
+  const html = `
+    <div class="insights-headline">
+      <div class="insights-stat"><div class="insights-stat-num">${total}</div><div class="insights-stat-label">consults analysed</div></div>
+      <div class="insights-stat"><div class="insights-stat-num">${negEmo} <span style="font-size:13px;color:var(--ink-light)">(${pct(negEmo)}%)</span></div><div class="insights-stat-label">anxious / frustrated /<br>confused / resigned</div></div>
+      <div class="insights-stat"><div class="insights-stat-num">${topConcern[1]} <span style="font-size:13px;color:var(--ink-light)">(${pct(topConcern[1])}%)</span></div><div class="insights-stat-label">top concern:<br>${topConcern[0]}</div></div>
+      <div class="insights-stat"><div class="insights-stat-num">${topBarrier[1]} <span style="font-size:13px;color:var(--ink-light)">(${pct(topBarrier[1])}%)</span></div><div class="insights-stat-label">top barrier:<br>${topBarrier[0]}</div></div>
+    </div>
+
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Emotional state on the call</div>
+        <div class="insight-block-pct">one bucket per user · ${total} users</div>
+      </div>
+      ${bars(emo)}
+    </div>
+
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Main concern — what brought them to the call</div>
+        <div class="insight-block-pct">counted once per user per theme</div>
+      </div>
+      ${bars(concerns)}
+    </div>
+
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Barriers — what's stopping them continuing</div>
+        <div class="insight-block-pct">counted once per user per theme</div>
+      </div>
+      ${bars(barriers)}
+    </div>
+
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Trigger — what they blame for the hairfall</div>
+        <div class="insight-block-pct">counted once per user per theme</div>
+      </div>
+      ${bars(triggers)}
+    </div>
+
+    <div class="insight-block">
+      <div class="insight-block-head">
+        <div class="insight-block-title">Other signals</div>
+        <div class="insight-block-pct">${total} users</div>
+      </div>
+      ${bars({ 'Tried treatment before MM (not first attempt)': priorTreatment, 'Showed confusion / comprehension markers': withConfusion })}
+    </div>
+  `
+
+  document.getElementById('context-body').innerHTML = html
+}
+
 function renderInsights() {
   const m1 = USERS.filter(u => u.m_cohort === 'M1')
   const total = m1.length
